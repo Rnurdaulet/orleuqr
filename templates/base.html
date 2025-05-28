@@ -1,0 +1,21 @@
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    {% include "includes/head.html" %}
+    <title>{% block title %}{% trans "Панорама педагогических идей" %}{% endblock %}</title>
+    {% block head %}{% endblock %}
+    {% include "includes/metrika.html" %}
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+{% include "includes/header.html" %}
+<!-- Main Content -->
+<main id="content" role="main">
+    {% block content %}{% endblock %}
+</main>
+{% include "includes/footer.html" %}
+{% include "includes/js.html" %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

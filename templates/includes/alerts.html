@@ -1,0 +1,11 @@
+<!-- Alerts -->
+{% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-soft-danger{% elif message.tags == 'success' %}alert-soft-success{% else %}alert-soft-secondary{% endif %}"
+                 role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

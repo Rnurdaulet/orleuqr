@@ -1,0 +1,30 @@
+<div id="mobile-blocker-warning" class="mb-3"></div>
+<script>
+    function isMobileDevice() {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        return /android|iphone|ipad|ipod/i.test(ua);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (isMobileDevice()) {
+            const container = document.getElementById("mobile-blocker-warning");
+            if (container) {
+                container.innerHTML = `
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
+                        <div>
+                            Вход по ЭЦП недоступен с мобильных устройств.<br>
+                            Пожалуйста, откройте страницу на <strong>компьютере</strong> с установленным <a href="https://ncl.pki.gov.kz/" target="_blank" class="alert-link">NCALayer</a>.
+                        </div>
+                    </div>
+                `;
+            }
+
+            const signButton = document.getElementById("signButton");
+            if (signButton) {
+                signButton.disabled = true;
+                signButton.innerText = "Вход с ЭЦП недоступен на мобильных";
+            }
+        }
+    });
+</script>

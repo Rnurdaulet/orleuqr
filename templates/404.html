@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "404" %}{% endblock %}
+
+{% block content %}
+
+<div class="container text-center">
+    {% include "includes/alerts.html" %}
+      <div class="mb-3">
+        <img class="img-fluid" src="{% static 'theme/images/404.png' %}" alt="Image 404" style="width: 30rem;">
+      </div>
+
+      <div class="mb-4">
+        <p class="fs-4 mb-0">{% trans "Страница не найдена" %}</p>
+        <p class="fs-4">{% trans "К сожалению, запрошенная страница не существует или была перемещена." %}</p>
+      </div>
+
+      <a class="btn btn-primary" href="./index.html">  {% trans "Вернуться на главную" %}</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Доступ ограничен" %}{% endblock %}
+
+{% block content %}
+<div class="container content-space-2 content-space-lg-3">
+  <div class="mx-auto text-center" style="max-width: 40rem;">
+    <div class="mb-5">
+      <h1 class="display-4">{% trans "Доступ только для участников" %}</h1>
+      <p class="lead">{% trans "Извините, но эта страница доступна только пользователям с ролью 'Участник'." %}</p>
+    </div>
+    <a href="/" class="btn btn-primary">{% trans "На главную" %}</a>
+  </div>
+</div>
+{% endblock %}
