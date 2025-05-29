@@ -27,6 +27,9 @@ INSTALLED_APPS = [
 
     "corsheaders",
     "whitenoise",
+
+    "apps.accounts",
+    "apps.core"
 ]
 
 # Middleware
@@ -43,11 +46,11 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# # Auth
-# AUTH_USER_MODEL = "accounts.User"
+# Auth
+AUTH_USER_MODEL = "accounts.User"
 # LOGIN_URL = "/login/ecp/"
-# LOGIN_REDIRECT_URL = "/"
-# LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
 
 ROOT_URLCONF = "orleuqr.urls"
 WSGI_APPLICATION = "orleuqr.wsgi.application"

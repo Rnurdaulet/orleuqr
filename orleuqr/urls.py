@@ -7,6 +7,7 @@ from django.views.i18n import set_language
 from django.conf import settings
 from django.conf.urls.static import static
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("i18n/", include("django.conf.urls.i18n")),
 ]
