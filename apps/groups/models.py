@@ -1,0 +1,51 @@
+import uuid
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from apps.participants.models import ParticipantProfile
+from apps.accounts.models import User
+
+
+class Group(models.Model):
+    external_id = models.IntegerField(unique=True, verbose_name=_("ID из внешней системы"))
+    code = models.CharField(_("Код группы"), max_length=10, unique=True)
+    course_name = models.TextField(_("Название курса"))
+    supervisor_name = models.CharField(_("ФИО тренера"), max_length=255)
+    supervisor_iin = models.CharField(_("ИИН тренера"), max_length=12)
+    start_date = models.DateField(_("Дата начала"))
+    end_date = models.DateField(_("Дата окончания"))
+
+    participants = models.ManyToManyField(
+        ParticipantProfile,
+        related_name="groups",
+        verbose_name=_("Участники")
+    )
+    trainers = models.ManyToManyField(
+        User,
+        related_name="trainer_groups",
+        verbose_name=_("Тренеры")
+    )
+
+    def __str__(self):
+        return f"{self.code} — {self.course_name}"
+
+    class Meta:
+        verbose_name = _("Группа")
+        verbose_name_plural = _("Группы")
+        ordering = ["-start_date"]
+
+
+class Session(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="sessions", verbose_name=_("Группа"))
+    date = models.DateField(_("Дата"))
+    start_time = models.TimeField(_("Время начала"), default="00:00")
+    end_time = models.TimeField(_("Время окончания"), default="23:59")
+    qr_token = models.UUIDField(_("Токен для QR"), unique=True, default=uuid.uuid4)
+
+    def __str__(self):
+        return f"{self.group.code} — {self.date}"
+
+    class Meta:
+        verbose_name = _("Сессия")
+        verbose_name_plural = _("Сессии")
+        unique_together = ("group", "date")
+        ordering = ["group", "date"]

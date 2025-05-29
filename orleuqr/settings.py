@@ -29,6 +29,9 @@ INSTALLED_APPS = [
     "whitenoise",
 
     "apps.accounts",
+    "apps.participants",
+    "apps.groups",
+    "apps.attendance",
     "apps.core"
 ]
 
