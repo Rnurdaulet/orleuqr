@@ -5,20 +5,7 @@ from django.utils.timezone import now, localtime
 from apps.groups.models import Session
 from apps.participants.models import PersonProfile, BrowserFingerprint
 from apps.attendance.models import Attendance, TrustLog
-
-
-def penalize_fingerprint(fingerprint, reason, delta, attendance=None):
-    old_score = fingerprint.trust_score
-    new_score = max(0, old_score + delta)
-    if new_score != old_score:
-        fingerprint.trust_score = new_score
-        fingerprint.save(update_fields=["trust_score"])
-        TrustLog.objects.create(
-            fingerprint=fingerprint,
-            attendance=attendance,
-            reason=reason,
-            delta=delta,
-        )
+from apps.attendance.utils import penalize_fingerprint, check_fingerprint_usage_conflicts
 
 
 def mark_qr_page(request, token):
@@ -34,9 +21,24 @@ def mark_qr_page(request, token):
     current_dt = localtime()
     current_time = current_dt.time()
 
-    if not (session.entry_start <= current_time <= session.entry_end):
+    if session.date != current_dt.date():
         return render(request, "qr/mark_invalid.html", {
-            "reason": "Время отметки не входит в допустимый интервал.",
+            "reason": "Отметка возможна только в день проведения сессии.",
+        })
+
+    if session.date != current_dt.date():
+        return render(request, "qr/mark_invalid.html", {
+            "reason": "Сегодня не день сессии.",
+        })
+
+    if current_time < session.entry_start:
+        return render(request, "qr/mark_invalid.html", {
+            "reason": "Слишком рано для отметки входа.",
+        })
+
+    if current_time > session.entry_end:
+        return render(request, "qr/mark_invalid.html", {
+            "reason": "Слишком поздно для отметки входа.",
         })
 
     fingerprint, created = BrowserFingerprint.objects.get_or_create(
@@ -51,28 +53,7 @@ def mark_qr_page(request, token):
         fingerprint.last_seen = current_dt
         fingerprint.save(update_fields=["last_seen"])
 
-    # 🚨 Проверка: один fingerprint использован для другого участника
-    others = BrowserFingerprint.objects.filter(
-        fingerprint_hash=fingerprint_hash
-    ).exclude(profile=profile)
-    if others.exists():
-        penalize_fingerprint(
-            fingerprint,
-            reason="Один и тот же отпечаток использован разными участниками",
-            delta=-30,
-        )
-
-    # 🚨 Проверка: fingerprint уже был в этой группе
-    existing = Attendance.objects.filter(
-        session=session,
-        fingerprint_hash=fingerprint_hash
-    ).exclude(profile=profile)
-    if existing.exists():
-        penalize_fingerprint(
-            fingerprint,
-            reason="Повторное использование отпечатка в одной сессии",
-            delta=-20,
-        )
+    check_fingerprint_usage_conflicts(fingerprint, profile, session)
 
     attendance, created = Attendance.objects.get_or_create(
         session=session,
@@ -110,9 +91,19 @@ def mark_qr_exit_page(request, token):
     current_dt = localtime()
     current_time = current_dt.time()
 
-    if not (session.exit_start <= current_time <= session.exit_end):
+    if session.date != current_dt.date():
         return render(request, "qr/mark_invalid.html", {
-            "reason": "Время отметки выхода не входит в допустимый интервал.",
+            "reason": "Отметка возможна только в день проведения сессии.",
+        })
+
+    if current_time < session.exit_start:
+        return render(request, "qr/mark_invalid.html", {
+            "reason": "Слишком рано для отметки выхода.",
+        })
+
+    if current_time > session.exit_end:
+        return render(request, "qr/mark_invalid.html", {
+            "reason": "Слишком поздно для отметки выхода.",
         })
 
     fingerprint, created = BrowserFingerprint.objects.get_or_create(
@@ -126,7 +117,7 @@ def mark_qr_exit_page(request, token):
     if not created:
         fingerprint.last_seen = current_dt
         fingerprint.save(update_fields=["last_seen"])
-
+    check_fingerprint_usage_conflicts(fingerprint, profile, session)
     attendance = Attendance.objects.filter(session=session, profile=profile).first()
     if not attendance:
         return render(request, "qr/mark_invalid.html", {
