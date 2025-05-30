@@ -82,5 +82,7 @@ class BrowserFingerprintAdmin(ModelAdmin):
     readonly_fields = ("first_seen", "last_seen", "trust_level_display")
 
     def trust_level_display(self, obj):
-        return obj.get_trust_level_display()
+        labels = dict(obj.TrustLevel.choices)
+        return labels.get(obj.trust_level, obj.trust_level)
+
     trust_level_display.short_description = "Уровень доверия"

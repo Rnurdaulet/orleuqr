@@ -68,9 +68,11 @@ class BrowserFingerprint(models.Model):
 
     @property
     def trust_level(self) -> str:
-        """Определение уровня доверия на основе баллов"""
         if self.trust_score >= 80:
             return self.TrustLevel.TRUSTED
         elif self.trust_score >= 50:
             return self.TrustLevel.SUSPICIOUS
         return self.TrustLevel.BLOCKED
+
+    def get_trust_level_display(self):
+        return dict(self.TrustLevel.choices).get(self.trust_level, "Неизвестно")

@@ -32,7 +32,9 @@ INSTALLED_APPS = [
     "apps.participants",
     "apps.groups",
     "apps.attendance",
+    "apps.qr",
     "apps.core"
+
 ]
 
 # Middleware
@@ -118,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = "ru"
-TIME_ZONE = "Asia/Aqtobe"
+TIME_ZONE = "Asia/Almaty"
 USE_I18N = True
 USE_TZ = True
 
