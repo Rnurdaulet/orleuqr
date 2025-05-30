@@ -73,12 +73,15 @@ class Attendance(models.Model):
     def is_left(self):
         return bool(self.left_at)
 
+
 class TrustLog(models.Model):
     fingerprint = models.ForeignKey(
         "participants.BrowserFingerprint",
         on_delete=models.CASCADE,
         related_name="trust_logs",
         verbose_name=_("Отпечаток"),
+        null=True,
+        blank=True,
     )
     attendance = models.ForeignKey(
         "attendance.Attendance",

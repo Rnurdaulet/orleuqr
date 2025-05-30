@@ -11,6 +11,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("qr/", include("apps.qr.urls")),
+    path("attendance/", include("apps.attendance.urls")),
     path("i18n/", include("django.conf.urls.i18n")),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+  <div class="container mt-4">
+    <h1 class="mb-3">Ручная отметка участника</h1>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" class="mb-4">
+      {% csrf_token %}
+      <div class="form-group">
+        {{ form.session.label_tag }} {{ form.session }}
+      </div>
+      <div class="form-group">
+        {{ form.profile.label_tag }} {{ form.profile }}
+      </div>
+      <div class="form-group">
+        {{ form.mark_type.label_tag }} {{ form.mark_type }}
+      </div>
+      <button type="submit" class="btn btn-primary">Отметить</button>
+    </form>
+  </div>
+{% endblock %}
