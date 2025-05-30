@@ -1,2 +1,22 @@
-<h1>Ошибка отметки</h1>
-<p>{{ reason }}</p>
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+  <div class="container py-5 text-center">
+    <h1 class="display-4 text-danger">
+      ❌ {% trans "Отметка невозможна" %}
+    </h1>
+
+    <p class="lead mt-4">
+      {{ reason }}
+    </p>
+
+    <p class="text-muted">
+      {% trans "Пожалуйста, обратитесь к организатору или попробуйте позже." %}
+    </p>
+
+    <a href="/" class="btn btn-outline-secondary mt-4">
+      {% trans "Вернуться на главную" %}
+    </a>
+  </div>
+{% endblock %}
