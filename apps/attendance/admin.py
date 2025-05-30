@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
-from .models import Attendance
+from .models import Attendance, TrustLog
 
 
 @admin.register(Attendance)
@@ -49,3 +49,9 @@ class AttendanceAdmin(ModelAdmin):
             '<span style="color: {};">{}</span>', color, obj.get_trust_level_display()
         )
     trust_level_colored.short_description = "Доверие"
+
+@admin.register(TrustLog)
+class TrustLogAdmin(ModelAdmin):
+    list_display = ("fingerprint", "reason", "delta", "created_at")
+    search_fields = ("reason", "fingerprint__fingerprint_hash")
+    list_filter = ("created_at",)

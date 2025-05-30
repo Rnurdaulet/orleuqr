@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.groups.models import Session
-from apps.participants.models import ParticipantProfile
+from apps.participants.models import PersonProfile
 from apps.accounts.models import User
 
 
@@ -18,7 +18,7 @@ class Attendance(models.Model):
         verbose_name=_("Сессия"),
     )
     profile = models.ForeignKey(
-        ParticipantProfile,
+        PersonProfile,
         on_delete=models.CASCADE,
         related_name="attendances",
         verbose_name=_("Профиль участника"),
@@ -72,3 +72,29 @@ class Attendance(models.Model):
 
     def is_left(self):
         return bool(self.left_at)
+
+class TrustLog(models.Model):
+    fingerprint = models.ForeignKey(
+        "participants.BrowserFingerprint",
+        on_delete=models.CASCADE,
+        related_name="trust_logs",
+        verbose_name=_("Отпечаток"),
+    )
+    attendance = models.ForeignKey(
+        "attendance.Attendance",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Связанная отметка"),
+    )
+    reason = models.CharField(_("Причина"), max_length=255)
+    delta = models.SmallIntegerField(_("Изменение баллов доверия"))  # напр. -20
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Лог доверия")
+        verbose_name_plural = _("Логи доверия")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.created_at} — {self.reason} ({self.delta})"

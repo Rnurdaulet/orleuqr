@@ -3,23 +3,34 @@ from django.http import HttpResponseBadRequest
 from django.utils.timezone import now, localtime
 
 from apps.groups.models import Session
-from apps.participants.models import ParticipantProfile, BrowserFingerprint
-from apps.attendance.models import Attendance
+from apps.participants.models import PersonProfile, BrowserFingerprint
+from apps.attendance.models import Attendance, TrustLog
+
+
+def penalize_fingerprint(fingerprint, reason, delta, attendance=None):
+    old_score = fingerprint.trust_score
+    new_score = max(0, old_score + delta)
+    if new_score != old_score:
+        fingerprint.trust_score = new_score
+        fingerprint.save(update_fields=["trust_score"])
+        TrustLog.objects.create(
+            fingerprint=fingerprint,
+            attendance=attendance,
+            reason=reason,
+            delta=delta,
+        )
 
 
 def mark_qr_page(request, token):
     iin = request.GET.get("iin")
     fingerprint_hash = request.GET.get("fp")
 
-    # Если нет IIN или fingerprint, отдаем страницу для JS и сбора данных
     if not iin or not fingerprint_hash:
         return render(request, "qr/mark.html", {"token": token})
 
-    # Получаем профиль и сессию
-    profile = get_object_or_404(ParticipantProfile, iin=iin)
+    profile = get_object_or_404(PersonProfile, iin=iin)
     session = get_object_or_404(Session, qr_token_entry=token)
 
-    # Локальное время и его проверка на допустимый интервал входа
     current_dt = localtime()
     current_time = current_dt.time()
 
@@ -28,7 +39,6 @@ def mark_qr_page(request, token):
             "reason": "Время отметки не входит в допустимый интервал.",
         })
 
-    # Обработка отпечатка браузера
     fingerprint, created = BrowserFingerprint.objects.get_or_create(
         profile=profile,
         fingerprint_hash=fingerprint_hash,
@@ -41,7 +51,29 @@ def mark_qr_page(request, token):
         fingerprint.last_seen = current_dt
         fingerprint.save(update_fields=["last_seen"])
 
-    # Отметка посещения, если еще не было
+    # 🚨 Проверка: один fingerprint использован для другого участника
+    others = BrowserFingerprint.objects.filter(
+        fingerprint_hash=fingerprint_hash
+    ).exclude(profile=profile)
+    if others.exists():
+        penalize_fingerprint(
+            fingerprint,
+            reason="Один и тот же отпечаток использован разными участниками",
+            delta=-30,
+        )
+
+    # 🚨 Проверка: fingerprint уже был в этой группе
+    existing = Attendance.objects.filter(
+        session=session,
+        fingerprint_hash=fingerprint_hash
+    ).exclude(profile=profile)
+    if existing.exists():
+        penalize_fingerprint(
+            fingerprint,
+            reason="Повторное использование отпечатка в одной сессии",
+            delta=-20,
+        )
+
     attendance, created = Attendance.objects.get_or_create(
         session=session,
         profile=profile,
@@ -64,6 +96,7 @@ def mark_qr_page(request, token):
         "fingerprint": fingerprint,
     })
 
+
 def mark_qr_exit_page(request, token):
     iin = request.GET.get("iin")
     fingerprint_hash = request.GET.get("fp")
@@ -71,22 +104,17 @@ def mark_qr_exit_page(request, token):
     if not iin or not fingerprint_hash:
         return render(request, "qr/mark.html", {"token": token, "mode": "exit"})
 
-    profile = get_object_or_404(ParticipantProfile, iin=iin)
+    profile = get_object_or_404(PersonProfile, iin=iin)
     session = get_object_or_404(Session, qr_token_exit=token)
 
     current_dt = localtime()
     current_time = current_dt.time()
-
-    print(current_time)
-    print(session.exit_start)
-    print(session.exit_end)
 
     if not (session.exit_start <= current_time <= session.exit_end):
         return render(request, "qr/mark_invalid.html", {
             "reason": "Время отметки выхода не входит в допустимый интервал.",
         })
 
-    # обновляем или создаем fingerprint
     fingerprint, created = BrowserFingerprint.objects.get_or_create(
         profile=profile,
         fingerprint_hash=fingerprint_hash,
@@ -99,7 +127,6 @@ def mark_qr_exit_page(request, token):
         fingerprint.last_seen = current_dt
         fingerprint.save(update_fields=["last_seen"])
 
-    # ищем существующую отметку входа
     attendance = Attendance.objects.filter(session=session, profile=profile).first()
     if not attendance:
         return render(request, "qr/mark_invalid.html", {
@@ -107,7 +134,10 @@ def mark_qr_exit_page(request, token):
         })
 
     if attendance.left_at:
-        return render(request, "qr/mark_already.html", {"attendance": attendance})
+        return render(request, "qr/mark_already.html", {
+            "attendance": attendance,
+            "fingerprint": fingerprint,
+        })
 
     attendance.left_at = current_dt
     attendance.save(update_fields=["left_at"])

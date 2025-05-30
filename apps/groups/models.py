@@ -1,7 +1,7 @@
 import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.participants.models import ParticipantProfile
+from apps.participants.models import PersonProfile
 from apps.accounts.models import User
 
 
@@ -15,12 +15,12 @@ class Group(models.Model):
     end_date = models.DateField(_("Дата окончания"))
 
     participants = models.ManyToManyField(
-        ParticipantProfile,
+        PersonProfile,
         related_name="groups",
         verbose_name=_("Участники")
     )
     trainers = models.ManyToManyField(
-        User,
+        PersonProfile,
         related_name="trainer_groups",
         verbose_name=_("Тренеры")
     )

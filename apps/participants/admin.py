@@ -1,34 +1,28 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
-from .models import ParticipantProfile, TrainerProfile, BrowserFingerprint
+from .models import BrowserFingerprint, PersonProfile
 
 
-class BasePersonProfileAdmin(ModelAdmin):
-    list_display = ("full_name", "iin", "email")
+@admin.register(PersonProfile)
+class PersonProfileAdmin(ModelAdmin):
+    list_display = ("full_name", "iin", "email", "role_display", "fingerprint_count")
+    list_filter = ("role", "fingerprints__trust_score")
     search_fields = ("full_name", "iin", "email")
     ordering = ("full_name",)
 
     fieldsets = (
         ("Основная информация", {
-            "fields": ("full_name", "iin", "email"),
+            "fields": ("full_name", "iin", "email", "role"),
         }),
     )
 
-
-@admin.register(ParticipantProfile)
-class ParticipantProfileAdmin(BasePersonProfileAdmin):
-    list_display = ("full_name", "iin", "email", "fingerprint_count")
-    list_filter = ("fingerprints__trust_score",)
+    def role_display(self, obj):
+        return obj.get_role_display()
+    role_display.short_description = "Роль"
 
     def fingerprint_count(self, obj):
         return obj.fingerprints.count()
     fingerprint_count.short_description = "Отпечатков"
-
-
-@admin.register(TrainerProfile)
-class TrainerProfileAdmin(BasePersonProfileAdmin):
-    pass
-
 
 class BrowserFingerprintInline(TabularInline):
     model = BrowserFingerprint
