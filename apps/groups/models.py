@@ -34,18 +34,35 @@ class Group(models.Model):
         ordering = ["-start_date"]
 
 
+import uuid
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+
 class Session(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="sessions", verbose_name=_("Группа"))
+    group = models.ForeignKey(
+        "groups.Group",
+        on_delete=models.CASCADE,
+        related_name="sessions",
+        verbose_name=_("Группа"),
+    )
     date = models.DateField(_("Дата"))
-    start_time = models.TimeField(_("Время начала"), default="00:00")
-    end_time = models.TimeField(_("Время окончания"), default="23:59")
-    qr_token = models.UUIDField(_("Токен для QR"), unique=True, default=uuid.uuid4)
+
+    # Временные окна
+    entry_start = models.TimeField(_("Вход: начало"), default="09:00")
+    entry_end = models.TimeField(_("Вход: конец"), default="10:00")
+    exit_start = models.TimeField(_("Выход: начало"), default="17:00")
+    exit_end = models.TimeField(_("Выход: конец"), default="18:00")
+
+    # Разные QR-токены на вход и выход
+    qr_token_entry = models.UUIDField(_("QR токен (вход)"), unique=True, default=uuid.uuid4)
+    qr_token_exit = models.UUIDField(_("QR токен (выход)"), unique=True, default=uuid.uuid4)
+
+    class Meta:
+        unique_together = ("group", "date")
+        ordering = ["group", "date"]
+        verbose_name = _("Сессия")
+        verbose_name_plural = _("Сессии")
 
     def __str__(self):
         return f"{self.group.code} — {self.date}"
-
-    class Meta:
-        verbose_name = _("Сессия")
-        verbose_name_plural = _("Сессии")
-        unique_together = ("group", "date")
-        ordering = ["group", "date"]

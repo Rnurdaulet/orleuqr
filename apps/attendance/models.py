@@ -24,21 +24,25 @@ class Attendance(models.Model):
         verbose_name=_("Профиль участника"),
     )
 
+    # ⏱️ Время входа и выхода
+    arrived_at = models.DateTimeField(_("Время прихода"), null=True, blank=True)
+    left_at = models.DateTimeField(_("Время ухода"), null=True, blank=True)
+
+    # 🧠 Идентификация по браузеру
     fingerprint_hash = models.CharField(
         _("Хэш браузера"), max_length=64, blank=True, null=True
     )
-
     trust_level = models.CharField(
         _("Уровень доверия"),
         max_length=20,
         choices=TrustLevel.choices,
         default=TrustLevel.TRUSTED,
     )
-
     trust_score = models.PositiveSmallIntegerField(
         _("Баллы доверия"), default=100
     )
 
+    # 🧍 Отметка вручную тренером
     marked_by_trainer = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -48,9 +52,7 @@ class Attendance(models.Model):
         related_name="manual_attendances",
     )
 
-    timestamp = models.DateTimeField(
-        _("Время отметки"), auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = _("Отметка посещения")
@@ -60,7 +62,13 @@ class Attendance(models.Model):
             models.Index(fields=["session", "profile"]),
             models.Index(fields=["fingerprint_hash"]),
         ]
-        ordering = ["-timestamp"]
+        ordering = ["-arrived_at"]
 
     def __str__(self):
         return f"{self.profile.full_name} → {self.session.date} ({self.trust_level})"
+
+    def is_present(self):
+        return bool(self.arrived_at)
+
+    def is_left(self):
+        return bool(self.left_at)

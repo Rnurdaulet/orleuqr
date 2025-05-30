@@ -1,23 +1,33 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
-from .models import ParticipantProfile, BrowserFingerprint
+from .models import ParticipantProfile, TrainerProfile, BrowserFingerprint
 
 
-@admin.register(ParticipantProfile)
-class ParticipantProfileAdmin(ModelAdmin):
-    list_display = ("full_name", "iin", "email", "fingerprint_count")
+class BasePersonProfileAdmin(ModelAdmin):
+    list_display = ("full_name", "iin", "email")
     search_fields = ("full_name", "iin", "email")
-    list_filter = ("fingerprints__trust_score",)
-
-    def fingerprint_count(self, obj):
-        return obj.fingerprints.count()
-    fingerprint_count.short_description = "Отпечатков"
+    ordering = ("full_name",)
 
     fieldsets = (
         ("Основная информация", {
             "fields": ("full_name", "iin", "email"),
         }),
     )
+
+
+@admin.register(ParticipantProfile)
+class ParticipantProfileAdmin(BasePersonProfileAdmin):
+    list_display = ("full_name", "iin", "email", "fingerprint_count")
+    list_filter = ("fingerprints__trust_score",)
+
+    def fingerprint_count(self, obj):
+        return obj.fingerprints.count()
+    fingerprint_count.short_description = "Отпечатков"
+
+
+@admin.register(TrainerProfile)
+class TrainerProfileAdmin(BasePersonProfileAdmin):
+    pass
 
 
 class BrowserFingerprintInline(TabularInline):
@@ -46,7 +56,12 @@ class BrowserFingerprintAdmin(ModelAdmin):
         "last_seen",
     )
     list_filter = ("trust_score",)
-    search_fields = ("fingerprint_hash", "user_agent", "profile__iin", "profile__full_name")
+    search_fields = (
+        "fingerprint_hash",
+        "user_agent",
+        "profile__iin",
+        "profile__full_name",
+    )
 
     fieldsets = (
         ("Связь", {
