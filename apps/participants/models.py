@@ -1,8 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from apps.core.models import BaseModel
 
-class PersonProfile(models.Model):
+class PersonProfile(BaseModel):
     class Role(models.TextChoices):
         PARTICIPANT = "participant", _("Участник")
         TRAINER = "trainer", _("Тренер")
@@ -26,7 +27,7 @@ class PersonProfile(models.Model):
 
 
 
-class BrowserFingerprint(models.Model):
+class BrowserFingerprint(BaseModel):
     class TrustLevel(models.TextChoices):
         TRUSTED = "trusted", _("Доверенный")
         SUSPICIOUS = "suspicious", _("Подозрительный")

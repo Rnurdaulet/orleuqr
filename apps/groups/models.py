@@ -2,7 +2,6 @@ import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.participants.models import PersonProfile
-from apps.accounts.models import User
 
 
 class Group(models.Model):
