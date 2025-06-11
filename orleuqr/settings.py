@@ -52,10 +52,9 @@ MIDDLEWARE = [
 ]
 
 # Auth
-AUTH_USER_MODEL = "accounts.User"
 # LOGIN_URL = "/login/ecp/"
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+# LOGIN_REDIRECT_URL = "/"
+# LOGOUT_REDIRECT_URL = "/"
 
 ROOT_URLCONF = "orleuqr.urls"
 WSGI_APPLICATION = "orleuqr.wsgi.application"
@@ -72,6 +71,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.accounts.context_processors.user_profile",
             ],
         },
     },
@@ -299,3 +299,16 @@ LOGGING = {
 #     # Можно явно указать релиз (например, git hash)
 #     release="platformppi@2025.05.26",
 # )
+
+OIDC_RP_CLIENT_ID = 'qr'
+OIDC_RP_CLIENT_SECRET = 'krstCUoqHOMyVwP3cjRumEYccsRe0Ym6'
+OIDC_RP_SCOPES = 'openid email profile'
+
+OIDC_OP_AUTHORIZATION_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/auth'
+OIDC_OP_TOKEN_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/token'
+OIDC_OP_USER_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/userinfo'
+OIDC_OP_JWKS_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/certs'
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'

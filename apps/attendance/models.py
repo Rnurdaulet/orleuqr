@@ -2,7 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.groups.models import Session
 from apps.participants.models import PersonProfile
-from apps.accounts.models import User
 
 
 class Attendance(models.Model):
@@ -44,7 +43,7 @@ class Attendance(models.Model):
 
     # 🧍 Отметка вручную тренером
     marked_by_trainer = models.ForeignKey(
-        User,
+        PersonProfile,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

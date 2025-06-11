@@ -2,102 +2,89 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans "Панорама педагогических идей" %}{% endblock %}
+{% block title %}Главная - Система учета посещений{% endblock %}
 
 {% block content %}
-    <div class="overflow-hidden">
-        <div class="container content-space-t-4 content-space-b-3">
-            {% include "includes/alerts.html" %}
-            <div class="row justify-content-lg-between align-items-md-center">
-                <div class="col-md-6 col-lg-5 mb-7 mb-md-0">
-                    <div class="mb-5">
-                        <span class="text-cap">Өрлеу 2025</span>
-                        <h4 class="display-5 mb-3">{% trans "Панорама педагогических идей" %}</h4>
-                        <p class="lead">{% trans "Площадка для обмена эффективными педагогическими практиками в сфере функциональной грамотности." %}</p>
-                        <p class="lead">{% trans "Приём заявок на региональный этап конкурса" %}</p>
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">Система учета посещений</h1>
+        <p class="lead mb-5">
+            Эффективное решение для учета посещаемости и управления доступом
+        </p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-qr-code-scan display-4 text-primary mb-3"></i>
+                        <h3 class="card-title">QR-коды</h3>
+                        <p class="card-text">
+                            Быстрая и удобная система отметки посещения с помощью QR-кодов
+                        </p>
                     </div>
-
-                    {% if not request.user.is_authenticated %}
-                        <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded">
-                            {% trans "Для подачи заявки необходимо войти через ЭЦП." %}
-                        </div>
-                        <div class="mt-4">
-                            <a href="{% url 'ecp_login' %}" class="btn btn-primary btn-transition">
-                                {% trans "Войти через ЭЦП" %}
-                            </a>
-                        </div>
-
-                    {% elif request.user.role == "participant" %}
-                        {% with application=request.user.applications profile=request.user.profile %}
-
-                            {% if application %}
-                                <div class="w-lg-75 text-center mx-auto mb-sm-9">
-                                    <h2 class="h1">{% trans "Ваша заявка" %}</h2>
-                                    <p class="text-muted">
-                                        {% trans "Спасибо за участие! Ваша заявка успешно отправлена." %}
-                                    </p>
-                                </div>
-
-                                <ul class="list-group list-group-lg">
-                                    <li class="list-group-item">
-                                        <div class="row">
-                                            <div class="col-sm-4"><span class="h6">{% trans "Ф.И.О." %}:</span></div>
-                                            <div class="col-sm-8">{{ profile.full_name }}</div>
-                                        </div>
-                                    </li>
-                                    <li class="list-group-item">
-                                        <div class="row">
-                                            <div class="col-sm-4"><span class="h6">{% trans "Статус" %}:</span></div>
-                                            <div class="col-sm-8">
-                                                {% trans "Отправлена" %}
-                                                {#                                            {% if application.is_locked %}#}
-                                                {#                                                {% trans "Отправлена" %}#}
-                                                {#                                            {% else %}#}
-                                                {#                                                {% trans "Черновик (не подписана)" %}#}
-                                                {#                                            {% endif %}#}
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-end">
-                                        <a href="{% url 'contest:application_preview' %}"
-                                           class="btn btn-outline-primary">
-                                            {% trans "Перейти к заявке" %}
-                                        </a>
-                                    </li>
-                                </ul>
-                            {% else %}
-                                {% if can_create %}
-                                    <div class="bg-blue-50 border border-blue-200 p-4 rounded">
-                                        <p class="mb-2">{% trans "Вы ещё не подали заявку." %}</p>
-                                        <a href="{% url 'contest:application_create' %}"
-                                           class="btn btn-primary btn-transition">
-                                            {% trans "Подать заявку" %}
-                                        </a>
-                                    </div>
-                                {% else %}
-                                    <div class="alert alert-soft-danger" role="alert">
-                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                        {% trans "Подача заявок завершена." %}
-                                    </div>
-                                {% endif %}
-                            {% endif %}
-                        {% endwith %}
-
-                    {% else %}
-                        <div class="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-3 rounded">
-                            {% trans "Подача заявок доступна только участникам." %}
-                        </div>
-                    {% endif %}
                 </div>
-
-                <div class="col-md-6">
-                    <div class="position-relative">
-                        <img class="img-fluid rounded-2" width="650" height="650"
-                             src="{% static 'theme/images/yy.png' %}" alt="Image Description">
-                        <div class="position-absolute top-0 end-0 w-100 h-100 bg-soft-primary rounded-2 zi-n1 mt-5 me-n5"></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-graph-up display-4 text-primary mb-3"></i>
+                        <h3 class="card-title">Статистика</h3>
+                        <p class="card-text">
+                            Подробная статистика и аналитика посещаемости
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-shield-check display-4 text-primary mb-3"></i>
+                        <h3 class="card-title">Безопасность</h3>
+                        <p class="card-text">
+                            Надежная система аутентификации и контроля доступа
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+{% if user_profile %}
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Добро пожаловать, {{ user_profile.full_name }}!</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>ФИО:</strong> {{ user_profile.full_name }}</p>
+                            <p><strong>ИИН:</strong> {{ user_profile.iin }}</p>
+                            <p><strong>Email:</strong> {{ user_profile.email }}</p>
+                            <p><strong>Роль:</strong> {{ user_profile.get_role_display }}</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="/qr/scan/" class="btn btn-primary">
+                                <i class="bi bi-qr-code-scan"></i> Сканировать QR
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 text-center">
+            <h2 class="mb-4">Начните прямо сейчас</h2>
+            <a href="/accounts/login/" class="btn btn-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i> Войти в систему
+            </a>
+        </div>
+    </div>
+{% endif %}
 {% endblock %}
