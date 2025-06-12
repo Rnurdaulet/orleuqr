@@ -49,6 +49,8 @@ class SessionAdmin(ModelAdmin):
         "exit_window",
         "qr_token_entry_short",
         "qr_token_exit_short",
+        "qr_file_entry_link",
+        "qr_file_exit_link",
     )
     list_filter = ("group__code", "date")
     search_fields = ("group__code",)
@@ -57,6 +59,8 @@ class SessionAdmin(ModelAdmin):
     readonly_fields = (
         "qr_token_entry",
         "qr_token_exit",
+        "qr_file_entry",
+        "qr_file_exit",
     )
 
     fieldsets = (
@@ -64,10 +68,10 @@ class SessionAdmin(ModelAdmin):
             "fields": ("group", "date")
         }),
         ("Вход", {
-            "fields": ("entry_start", "entry_end", "qr_token_entry")
+            "fields": ("entry_start", "entry_end", "qr_token_entry", "qr_file_entry")
         }),
         ("Выход", {
-            "fields": ("exit_start", "exit_end", "qr_token_exit")
+            "fields": ("exit_start", "exit_end", "qr_token_exit", "qr_file_exit")
         }),
     )
 
@@ -86,3 +90,17 @@ class SessionAdmin(ModelAdmin):
     def qr_token_exit_short(self, obj):
         return str(obj.qr_token_exit)[:8]
     qr_token_exit_short.short_description = "QR (выход)"
+
+    def qr_file_entry_link(self, obj):
+        if obj.qr_file_entry:
+            return f'<a href="{obj.qr_file_entry.url}" target="_blank">Скачать PDF</a>'
+        return "-"
+    qr_file_entry_link.allow_tags = True
+    qr_file_entry_link.short_description = "PDF вход"
+
+    def qr_file_exit_link(self, obj):
+        if obj.qr_file_exit:
+            return f'<a href="{obj.qr_file_exit.url}" target="_blank">Скачать PDF</a>'
+        return "-"
+    qr_file_exit_link.allow_tags = True
+    qr_file_exit_link.short_description = "PDF выход"

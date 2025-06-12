@@ -1,4 +1,3 @@
-# services.py (apps/qr/services.py)
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import localtime
 from django.utils.translation import gettext as _
@@ -21,7 +20,8 @@ def _validate_session_time(session: Session, current_time, mode: str, use_time_l
         return False, _("Отметка возможна только в день проведения сессии."), None
 
     if not use_time_limits:
-        return True, None, Attendance.TimeStatus.ON_TIME
+        # Разрешаем отметку в любое время, статус определим позже
+        return True, None, None
 
     if mode == 'entry':
         if current_time < session.entry_start:
@@ -35,6 +35,15 @@ def _validate_session_time(session: Session, current_time, mode: str, use_time_l
             return False, _("Слишком поздно для отметки выхода."), Attendance.TimeStatus.TOO_LATE
 
     return True, None, Attendance.TimeStatus.ON_TIME
+
+
+def _calculate_time_status(event_time, start, end):
+    if event_time < start:
+        return Attendance.TimeStatus.TOO_EARLY
+    elif event_time > end:
+        return Attendance.TimeStatus.TOO_LATE
+    else:
+        return Attendance.TimeStatus.ON_TIME
 
 
 def mark_attendance(profile: PersonProfile, token: str, fingerprint_hash: str, user_agent: str, mode: str = 'entry'):
@@ -68,27 +77,38 @@ def mark_attendance(profile: PersonProfile, token: str, fingerprint_hash: str, u
 
     if mode == 'entry':
         if attendance:
-            return False, _("Вы уже отмечались на вход."), status
+            return False, _("Вы уже отмечались на вход."), attendance.arrived_status
+
+        arrived_status = status
+        if not use_time_limits:
+            arrived_status = _calculate_time_status(current_time, session.entry_start, session.entry_end)
+
         attendance = Attendance.objects.create(
             session=session,
             profile=profile,
             arrived_at=now,
-            arrived_status=status,
+            arrived_status=arrived_status,
             trust_level=fingerprint.trust_level,
             trust_score=fingerprint.trust_score,
             fingerprint_hash=fingerprint_hash,
         )
-        return True, attendance, status
+        return True, attendance, arrived_status
 
     elif mode == 'exit':
         if not attendance or not attendance.arrived_at:
-            return False, _("Отметка входа не найдена — нельзя отметить выход."), status
+            return False, _("Отметка входа не найдена — нельзя отметить выход."), attendance.left_status if attendance else None
+
         if attendance.left_at:
-            return False, _("Вы уже отмечались на выход."), status
+            return False, _("Вы уже отмечались на выход."), attendance.left_status
+
+        left_status = status
+        if not use_time_limits:
+            left_status = _calculate_time_status(current_time, session.exit_start, session.exit_end)
+
         attendance.left_at = now
-        attendance.left_status = status
+        attendance.left_status = left_status
         attendance.save(update_fields=["left_at", "left_status"])
-        return True, attendance, status
+        return True, attendance, left_status
 
 
 def manual_mark_entry(trainer_profile: PersonProfile, participant_profile: PersonProfile, session: Session, mark_type: str):
@@ -108,20 +128,22 @@ def manual_mark_entry(trainer_profile: PersonProfile, participant_profile: Perso
             "trust_score": 0,
             "fingerprint_hash": f"manual-mark-{trainer_profile.iin}",
             "marked_by_trainer": trainer_profile,
-            "arrived_status": Attendance.TimeStatus.MANUAL,
-            "left_status": Attendance.TimeStatus.MANUAL,
+            "arrived_status": Attendance.TimeStatus.UNKNOWN,
+            "left_status": Attendance.TimeStatus.UNKNOWN,
         }
     )
 
     changed = False
     if mark_type == "entry" and not attendance.arrived_at:
         attendance.arrived_at = now
+        attendance.arrived_status = Attendance.TimeStatus.MANUAL
         changed = True
     elif mark_type == "exit":
         if not attendance.arrived_at:
             return False, _("Сначала необходимо отметить вход.")
         if not attendance.left_at:
             attendance.left_at = now
+            attendance.left_status = Attendance.TimeStatus.MANUAL
             changed = True
 
     if changed:

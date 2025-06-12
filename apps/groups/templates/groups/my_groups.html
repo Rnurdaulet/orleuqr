@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n groups_extras %}
 
 {% block title %}{% trans "Мои группы" %}{% endblock %}
 
@@ -48,6 +48,86 @@
                                 {% endfor %}
                             </ul>
                         {% endif %}
+                    {% if user in group.trainers.all %}
+    {# Существующий вывод тренера ... #}
+
+    {% for session in group.sessions.all %}
+        <h6>Сессия {{ session.date }}</h6>
+        <table class="table table-bordered table-sm mb-4">
+            <thead>
+                <tr>
+                    <th>ФИО (ИИН)</th>
+                    <th>Вход</th>
+                    <th>Статус входа</th>
+                    <th>Выход</th>
+                    <th>Статус выхода</th>
+                    <th>Доверие</th>
+                    <th>Баллы доверия</th>
+                    <th>Отметка тренера</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant in group.participants.all %}
+                    {% with attendance=attendance_map|get_item:group.id|get_item:session.id|get_item:participant.id %}
+                        <tr>
+                            <td>{{ participant.full_name }} ({{ participant.iin }})</td>
+                            <td>
+                                {% if attendance and attendance.arrived_at %}
+                                    {{ attendance.arrived_at|date:"d M Y H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}
+                                    {{ attendance.get_arrived_status_display }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance and attendance.left_at %}
+                                    {{ attendance.left_at|date:"d M Y H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}
+                                    {{ attendance.get_left_status_display }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}
+                                    {{ attendance.get_trust_level_display }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}
+                                    {{ attendance.trust_score }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance and attendance.marked_by_trainer %}
+                                    Да
+                                {% else %}
+                                    Нет
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+{% endif %}
+
                     </div>
                 </div>
             {% else %}
@@ -60,22 +140,39 @@
                         <p><strong>{% trans "Тренер" %}:</strong> {{ group.supervisor_name }}</p>
                         <p><strong>{% trans "Даты" %}:</strong> {{ group.start_date }} — {{ group.end_date }}</p>
 
-                        {% if group.sessions.all %}
-                            <hr>
-                            <h5>{% trans "Сессии" %}:</h5>
-                            <ul class="list-group">
-                                {% for session in group.sessions.all %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ session.date }}
-                                        <span>
-                                            🕘 {{ session.entry_start }} — {{ session.entry_end }}
-                                            |
-                                            🕔 {{ session.exit_start }} — {{ session.exit_end }}
-                                        </span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
+                {% if group.sessions.all %}
+    <hr>
+    <h5>{% trans "Сессии и отметки" %}:</h5>
+    <ul class="list-group">
+        {% for session in group.sessions.all %}
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        {{ session.date }}
+                        🕘 {{ session.entry_start }} — {{ session.entry_end }} |
+                        🕔 {{ session.exit_start }} — {{ session.exit_end }}
+                    </div>
+                    <div>
+                        {% with attendance=attendance_map|get_item:group.id|get_item:session.id %}
+                            {% if attendance %}
+                                <strong>{% trans "Вход" %}:</strong> {{ attendance.arrived_at|date:"H:i" }} ({{ attendance.get_arrived_status_display }})<br>
+                                <strong>{% trans "Выход" %}:</strong> {{ attendance.left_at|date:"H:i" }} ({{ attendance.get_left_status_display }})<br>
+                                {% if attendance.marked_by_trainer %}
+                                    <small class="text-info">
+                                        {% trans "Отметка сделана тренером:" %} {{ attendance.marked_by_trainer.full_name }}
+                                    </small>
+                                {% endif %}
+                            {% else %}
+                                <em class="text-muted">{% trans "Отметок нет" %}</em>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
                     </div>
                 </div>
             {% endif %}
