@@ -45,16 +45,12 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "apps.accounts.middleware.AuthenticationMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-# Auth
-# LOGIN_URL = "/login/ecp/"
-# LOGIN_REDIRECT_URL = "/"
-# LOGOUT_REDIRECT_URL = "/"
 
 ROOT_URLCONF = "orleuqr.urls"
 WSGI_APPLICATION = "orleuqr.wsgi.application"

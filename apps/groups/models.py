@@ -23,6 +23,11 @@ class Group(models.Model):
         related_name="trainer_groups",
         verbose_name=_("Тренеры")
     )
+    use_time_limits = models.BooleanField(
+        _("Ограничение по времени отметок"),
+        default=False,
+        help_text=_("Если включено, то отметка доступна только в пределах временных окон сессии"),
+    )
 
     def __str__(self):
         return f"{self.code} — {self.course_name}"

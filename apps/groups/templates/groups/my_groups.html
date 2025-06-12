@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Мои группы" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">{% trans "Ваши группы" %}</h2>
+
+    {% if groups %}
+        {% for group in groups %}
+            {% if user in group.trainers.all %}
+                {# 💼 Пользователь — тренер #}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <strong>{{ group.code }}</strong> — {{ group.course_name }}
+                    </div>
+                    <div class="card-body">
+                        <p><strong>{% trans "Тренер" %}:</strong> {{ group.supervisor_name }}</p>
+                        <p><strong>{% trans "Даты" %}:</strong> {{ group.start_date }} — {{ group.end_date }}</p>
+
+                        <p><strong>QR Entry:</strong> {{ group.sessions.first.qr_token_entry }}</p>
+                        <p><strong>QR Exit:</strong> {{ group.sessions.first.qr_token_exit }}</p>
+
+                        <hr>
+                        <h5>{% trans "Участники группы" %}</h5>
+                        <ul>
+                            {% for person in group.participants.all %}
+                                <li>{{ person.full_name }} ({{ person.iin }})</li>
+                            {% endfor %}
+                        </ul>
+
+                        {% if group.sessions.all %}
+                            <hr>
+                            <h5>{% trans "Сессии" %}:</h5>
+                            <ul class="list-group">
+                                {% for session in group.sessions.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ session.date }}
+                                        <span>
+                                            🕘 {{ session.entry_start }} — {{ session.entry_end }}
+                                            |
+                                            🕔 {{ session.exit_start }} — {{ session.exit_end }}<br>
+                                            <small>QR Entry: {{ session.qr_token_entry }}</small><br>
+                                            <small>QR Exit: {{ session.qr_token_exit }}</small>
+                                        </span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                {# 👤 Пользователь — участник #}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <strong>{{ group.code }}</strong> — {{ group.course_name }}
+                    </div>
+                    <div class="card-body">
+                        <p><strong>{% trans "Тренер" %}:</strong> {{ group.supervisor_name }}</p>
+                        <p><strong>{% trans "Даты" %}:</strong> {{ group.start_date }} — {{ group.end_date }}</p>
+
+                        {% if group.sessions.all %}
+                            <hr>
+                            <h5>{% trans "Сессии" %}:</h5>
+                            <ul class="list-group">
+                                {% for session in group.sessions.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ session.date }}
+                                        <span>
+                                            🕘 {{ session.entry_start }} — {{ session.entry_end }}
+                                            |
+                                            🕔 {{ session.exit_start }} — {{ session.exit_end }}
+                                        </span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">{% trans "У вас нет активных групп." %}</p>
+    {% endif %}
+</div>
+{% endblock %}

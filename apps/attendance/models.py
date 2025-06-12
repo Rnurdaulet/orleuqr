@@ -2,13 +2,21 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.groups.models import Session
 from apps.participants.models import PersonProfile
+from apps.core.models import BaseModel
 
 
-class Attendance(models.Model):
+class Attendance(BaseModel):
     class TrustLevel(models.TextChoices):
         TRUSTED = "trusted", _("Доверенный")
         SUSPICIOUS = "suspicious", _("Подозрительный")
         BLOCKED = "blocked", _("Заблокирован")
+        MANUAL = "manual_by_trainer", _("Ручная отметка")
+
+    class TimeStatus(models.TextChoices):
+        TOO_EARLY = "too_early", _("Рано")
+        ON_TIME = "on_time", _("Во время")
+        TOO_LATE = "too_late", _("Опоздал")
+        UNKNOWN = "unknown", _("Неизвестно")
 
     session = models.ForeignKey(
         Session,
@@ -26,7 +34,18 @@ class Attendance(models.Model):
     # ⏱️ Время входа и выхода
     arrived_at = models.DateTimeField(_("Время прихода"), null=True, blank=True)
     left_at = models.DateTimeField(_("Время ухода"), null=True, blank=True)
-
+    arrived_status = models.CharField(
+        _("Статус входа"),
+        max_length=20,
+        choices=TimeStatus.choices,
+        default=TimeStatus.UNKNOWN,
+    )
+    left_status = models.CharField(
+        _("Статус выхода"),
+        max_length=20,
+        choices=TimeStatus.choices,
+        default=TimeStatus.UNKNOWN,
+    )
     # 🧠 Идентификация по браузеру
     fingerprint_hash = models.CharField(
         _("Хэш браузера"), max_length=64, blank=True, null=True
@@ -72,31 +91,34 @@ class Attendance(models.Model):
     def is_left(self):
         return bool(self.left_at)
 
+    def is_suspicious(self):
+        return self.trust_level in {
+            self.TrustLevel.SUSPICIOUS,
+            self.TrustLevel.BLOCKED,
+        } or self.trust_score < 50
+
+    def status_label(self):
+        if self.left_at and self.arrived_at:
+            return _("Посетил полностью")
+        elif self.arrived_at:
+            return _("Только вход")
+        elif self.left_at:
+            return _("Только выход")
+        return _("Отсутствует")
+
+    @classmethod
+    def for_group(cls, group):
+        return cls.objects.filter(session__group=group).select_related("profile", "session")
+
 
 class TrustLog(models.Model):
-    fingerprint = models.ForeignKey(
-        "participants.BrowserFingerprint",
-        on_delete=models.CASCADE,
-        related_name="trust_logs",
-        verbose_name=_("Отпечаток"),
-        null=True,
-        blank=True,
-    )
-    attendance = models.ForeignKey(
-        "attendance.Attendance",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name=_("Связанная отметка"),
-    )
-    reason = models.CharField(_("Причина"), max_length=255)
-    delta = models.SmallIntegerField(_("Изменение баллов доверия"))  # напр. -20
+    fingerprint = models.ForeignKey("participants.BrowserFingerprint", on_delete=models.CASCADE, null=True, blank=True)
+    attendance = models.ForeignKey("attendance.Attendance", on_delete=models.SET_NULL, null=True, blank=True)
+    reason = models.CharField(max_length=255)
+    delta = models.SmallIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        verbose_name = _("Лог доверия")
-        verbose_name_plural = _("Логи доверия")
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.created_at} — {self.reason} ({self.delta})"
+    def save(self, *args, **kwargs):
+        if not self.fingerprint and not self.attendance:
+            raise ValueError("TrustLog must be linked to either fingerprint or attendance.")
+        super().save(*args, **kwargs)

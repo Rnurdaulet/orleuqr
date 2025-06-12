@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="container mt-5">
+    <h2>Тестирование QR Сканера</h2>
+
+    <p>Здесь будет интеграция с камерой и сканером QR-кодов.</p>
+    <p>Для теста можно вручную ввести токен:</p>
+
+    <form id="qr-form" class="mb-3">
+      <label for="token">Введите QR-токен:</label>
+      <input type="text" id="token" name="token" class="form-control" placeholder="UUID токена">
+      <select id="mode" name="mode" class="form-select mt-2">
+        <option value="entry" selected>Отметка входа</option>
+        <option value="exit">Отметка выхода</option>
+      </select>
+      <button type="submit" class="btn btn-primary mt-3">Перейти</button>
+    </form>
+
+    <script>
+      document.getElementById('qr-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const token = document.getElementById('token').value.trim();
+        const mode = document.getElementById('mode').value;
+
+        if (!token) {
+          alert("Введите токен");
+          return;
+        }
+
+        let url = "/qr/mark/" + token + "/";
+        if (mode === "exit") {
+          url = "/qr/leave/" + token + "/";
+        }
+        window.location.href = url;
+      });
+    </script>
+  </div>
+{% endblock %}

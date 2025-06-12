@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Отметка посещения</title>
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 </head>
@@ -11,21 +11,11 @@
   <script>
     async function markAttendance() {
       const url = new URL(window.location.href);
-      let iin = url.searchParams.get("iin");
-
-      if (!iin || iin.length !== 12) {
-        iin = prompt("Введите ваш ИИН:");
-        if (!iin || iin.length !== 12) {
-          alert("Некорректный ИИН. Попробуйте снова.");
-          return;
-        }
-      }
 
       const fp = await FingerprintJS.load();
       const result = await fp.get();
       const fingerprint = result.visitorId;
 
-      url.searchParams.set("iin", iin);
       url.searchParams.set("fp", fingerprint);
       window.location.href = url.toString();
     }
