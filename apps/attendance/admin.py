@@ -9,12 +9,13 @@ class AttendanceAdmin(ModelAdmin):
         "profile",
         "session",
         "arrived_at",
-        "arrived_status_colored",    # Отображение статуса входа
+        "arrived_status_colored",
         "left_at",
-        "left_status_colored",       # Отображение статуса выхода
+        "left_status_colored",
         "trust_level_colored",
         "trust_score",
-        "marked_by_trainer",
+        "entry_marked_by_trainer",
+        "exit_marked_by_trainer",
     )
     list_filter = (
         "trust_level",
@@ -22,7 +23,8 @@ class AttendanceAdmin(ModelAdmin):
         "left_status",
         "session__group__code",
         "session__date",
-        "marked_by_trainer",
+        "marked_entry_by_trainer",
+        "marked_exit_by_trainer",
     )
     search_fields = (
         "profile__iin",
@@ -39,7 +41,8 @@ class AttendanceAdmin(ModelAdmin):
         "trust_score",
         "arrived_status",
         "left_status",
-        "marked_by_trainer",
+        "marked_entry_by_trainer",
+        "marked_exit_by_trainer",
         "created_at",
     )
     ordering = ("-arrived_at",)
@@ -48,7 +51,7 @@ class AttendanceAdmin(ModelAdmin):
         color = {
             "trusted": "green",
             "suspicious": "orange",
-            "blocked": "red"
+            "blocked": "red",
         }.get(obj.trust_level, "gray")
         return format_html(
             '<span style="color: {};">{}</span>', color, obj.get_trust_level_display()
@@ -82,6 +85,15 @@ class AttendanceAdmin(ModelAdmin):
             '<span style="color: {};">{}</span>', color, obj.get_left_status_display()
         )
     left_status_colored.short_description = "Статус выхода"
+
+    def entry_marked_by_trainer(self, obj):
+        return obj.marked_entry_by_trainer.full_name if obj.marked_entry_by_trainer else "-"
+    entry_marked_by_trainer.short_description = "Отметка входа (тренер)"
+
+    def exit_marked_by_trainer(self, obj):
+        return obj.marked_exit_by_trainer.full_name if obj.marked_exit_by_trainer else "-"
+    exit_marked_by_trainer.short_description = "Отметка выхода (тренер)"
+
 
 @admin.register(TrustLog)
 class TrustLogAdmin(ModelAdmin):

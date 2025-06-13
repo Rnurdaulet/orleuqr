@@ -61,13 +61,22 @@ class Attendance(BaseModel):
     )
 
     # 🧍 Отметка вручную тренером
-    marked_by_trainer = models.ForeignKey(
+    marked_entry_by_trainer = models.ForeignKey(
         PersonProfile,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name=_("Отметил тренер"),
-        related_name="manual_attendances",
+        verbose_name=_("Вход отмечен вручную"),
+        related_name="manual_entry_attendances",
+    )
+
+    marked_exit_by_trainer = models.ForeignKey(
+        PersonProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Выход отмечен вручную"),
+        related_name="manual_exit_attendances",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

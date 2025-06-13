@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Посещаемость группы: {{ group.code }} — {{ group.course_name }}</h2>
+
+  <div class="mb-2 small text-muted">
+    <strong>Легенда:</strong> ✓ — во время, ! — опоздал, ~ — рано, ? — неизвестно, * — отметка вручную
+  </div>
+
+  <table id="attendance-table" class="table table-bordered table-sm text-center align-middle w-100">
+    <thead class="table-light">
+      <tr id="thead-row">
+        <th>№</th>
+        <th>Участник</th>
+        <th>Сегодня</th>
+      </tr>
+    </thead>
+    <tbody id="attendance-tbody"></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-html5-3.2.3/b-print-3.2.3/datatables.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-html5-3.2.3/b-print-3.2.3/datatables.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const res = await fetch("{% url 'groups:attendance_json' group.id %}");
+  const raw = await res.json();
+
+  const sessionsMap = new Map();
+  const participantsMap = new Map();
+
+  raw.data.forEach(a => {
+    sessionsMap.set(a.session_id, a.date);
+    if (!participantsMap.has(a.participant_id)) {
+      participantsMap.set(a.participant_id, {
+        name: a.participant,
+        attendance: {}
+      });
+    }
+    participantsMap.get(a.participant_id).attendance[a.session_id] = a;
+  });
+
+  const sessions = Array.from(sessionsMap.entries()).sort((a, b) => new Date(a[1]) - new Date(b[1]));
+  const participants = Array.from(participantsMap.values());
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  // Шапка таблицы
+  const thead = document.getElementById("thead-row");
+
+  // Вставляем остальные сессии после "Сегодня"
+  sessions.forEach(([_, date]) => {
+    const th = document.createElement("th");
+    th.textContent = formatDate(date);
+    thead.appendChild(th);
+  });
+
+  // Тело таблицы
+  const tbody = document.getElementById("attendance-tbody");
+
+  participants.forEach((p, i) => {
+    const tr = document.createElement("tr");
+
+    const todaySession = sessions.find(([_, date]) => date === todayISO);
+    let todayCell = '<td>—</td>';
+    if (todaySession) {
+      const a = p.attendance[todaySession[0]];
+      if (a) {
+        todayCell = `<td class="text-start">
+          <div><strong>В:</strong> ${a.marked_entry ? '*' : statusIcon(a.arrived_status)} ${a.arrived_at || ''}</div>
+          <div><strong>У:</strong> ${a.marked_exit ? '*' : statusIcon(a.left_status)} ${a.left_at || ''}</div>
+        </td>`;
+      }
+    }
+
+    // Собираем HTML строки
+    tr.innerHTML = `<td>${i + 1}</td><td>${p.name}</td>${todayCell}` +
+      sessions.map(([id]) => {
+        const a = p.attendance[id];
+        if (!a) return `<td>—</td>`;
+        return `<td class="text-start">
+          <div><strong>В:</strong> ${a.marked_entry ? '*' : statusIcon(a.arrived_status)} ${a.arrived_at || ''}</div>
+          <div><strong>У:</strong> ${a.marked_exit ? '*' : statusIcon(a.left_status)} ${a.left_at || ''}</div>
+        </td>`;
+      }).join("");
+
+    tbody.appendChild(tr);
+  });
+
+  new DataTable('#attendance-table', {
+    language: {
+      url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+    },
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    responsive: true,
+    dom: 'Bfrtip',
+    buttons: ['excel', 'pdf', 'print'],
+    ordering: false
+  });
+});
+
+function statusIcon(status) {
+  switch (status) {
+    case 'on_time': return '✓';
+    case 'too_late': return '!';
+    case 'too_early': return '~';
+    case 'unknown': return '?';
+    default: return '-';
+  }
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+}
+</script>
+{% endblock %}
