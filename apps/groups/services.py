@@ -7,9 +7,6 @@ from apps.groups.models import Session
 from apps.logger import logger
 
 
-
-
-
 def generate_session_qr_files(session_id):
     try:
         session = Session.objects.get(id=session_id)
@@ -20,8 +17,8 @@ def generate_session_qr_files(session_id):
     try:
         base_url = settings.SITE_BASE_URL.rstrip('/')
 
-        mark_url = f"{base_url}/mark/{session.qr_token_entry}/"
-        leave_url = f"{base_url}/leave/{session.qr_token_exit}/"
+        mark_url = f"{base_url}/qr/mark/{session.qr_token_entry}/"
+        leave_url = f"{base_url}/qr/leave/{session.qr_token_exit}/"
 
         # SVG QR вход
         buffer_entry = BytesIO()
@@ -68,6 +65,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.utils import ImageReader
 
+
 def generate_session_qr_pdf_on_fly(session_id, mode='entry'):
     """
     Генерация PDF с QR и инфо для печати, возвращает bytes PDF или None при ошибке.
@@ -82,7 +80,7 @@ def generate_session_qr_pdf_on_fly(session_id, mode='entry'):
     # Собираем URL для QR
     base_url = getattr(settings, "SITE_BASE_URL", "http://127.0.0.1:8000").rstrip('/')
     token = session.qr_token_entry if mode == 'entry' else session.qr_token_exit
-    qr_url = f"{base_url}/qr/{'mark' if mode=='entry' else 'leave'}/{token}/"
+    qr_url = f"{base_url}/qr/{'mark' if mode == 'entry' else 'leave'}/{token}/"
 
     # Рисуем QR в память
     buf_qr = BytesIO()
@@ -110,7 +108,7 @@ def generate_session_qr_pdf_on_fly(session_id, mode='entry'):
     # Код группы
     text_y = qr_y - 20
     c.setFont('DejaVu', 26)
-    c.drawCentredString(width/2, text_y, session.group.code)
+    c.drawCentredString(width / 2, text_y, session.group.code)
 
     # Название курса с переносом
     text_y -= 24
@@ -123,7 +121,7 @@ def generate_session_qr_pdf_on_fly(session_id, mode='entry'):
     )
     para = Paragraph(session.group.course_name, style)
     # оборачиваем в ширину чуть меньше страницы (оставляем поля)
-    w, h = para.wrap(width - 2*margin, height)
+    w, h = para.wrap(width - 2 * margin, height)
     para.drawOn(c, margin, text_y - h)
 
     # корректируем позицию для следующих строк
@@ -132,15 +130,15 @@ def generate_session_qr_pdf_on_fly(session_id, mode='entry'):
     # Дата и время
     date_str = session.date.strftime('%d.%m.%Y')
     c.setFont('DejaVu', 14)
-    c.drawCentredString(width/2, text_y, date_str)
-    start_time = session.entry_start if mode=='entry' else session.exit_start
+    c.drawCentredString(width / 2, text_y, date_str)
+    start_time = session.entry_start if mode == 'entry' else session.exit_start
     text_y -= 18
-    c.drawCentredString(width/2, text_y, start_time.strftime('%H:%M'))
+    c.drawCentredString(width / 2, text_y, start_time.strftime('%H:%M'))
 
     # Тип
     text_y -= 30
     c.setFont('DejaVu', 16)
-    c.drawCentredString(width/2, text_y, _("Вход") if mode=='entry' else _("Выход"))
+    c.drawCentredString(width / 2, text_y, _("Вход") if mode == 'entry' else _("Выход"))
 
     c.showPage()
     c.save()
