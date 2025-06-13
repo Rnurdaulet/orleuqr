@@ -3,23 +3,28 @@ from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from .models import Attendance, TrustLog
 
-
 @admin.register(Attendance)
 class AttendanceAdmin(ModelAdmin):
     list_display = (
         "profile",
         "session",
         "arrived_at",
+        "arrived_status_colored",
         "left_at",
+        "left_status_colored",
         "trust_level_colored",
         "trust_score",
-        "marked_by_trainer",
+        "entry_marked_by_trainer",
+        "exit_marked_by_trainer",
     )
     list_filter = (
         "trust_level",
+        "arrived_status",
+        "left_status",
         "session__group__code",
         "session__date",
-        "marked_by_trainer",
+        "marked_entry_by_trainer",
+        "marked_exit_by_trainer",
     )
     search_fields = (
         "profile__iin",
@@ -34,7 +39,10 @@ class AttendanceAdmin(ModelAdmin):
         "fingerprint_hash",
         "trust_level",
         "trust_score",
-        "marked_by_trainer",
+        "arrived_status",
+        "left_status",
+        "marked_entry_by_trainer",
+        "marked_exit_by_trainer",
         "created_at",
     )
     ordering = ("-arrived_at",)
@@ -43,12 +51,49 @@ class AttendanceAdmin(ModelAdmin):
         color = {
             "trusted": "green",
             "suspicious": "orange",
-            "blocked": "red"
+            "blocked": "red",
         }.get(obj.trust_level, "gray")
         return format_html(
             '<span style="color: {};">{}</span>', color, obj.get_trust_level_display()
         )
     trust_level_colored.short_description = "Доверие"
+
+    def arrived_status_colored(self, obj):
+        color_map = {
+            "too_early": "orange",
+            "on_time": "green",
+            "too_late": "red",
+            "unknown": "gray",
+            "manual": "blue",
+        }
+        color = color_map.get(obj.arrived_status, "gray")
+        return format_html(
+            '<span style="color: {};">{}</span>', color, obj.get_arrived_status_display()
+        )
+    arrived_status_colored.short_description = "Статус входа"
+
+    def left_status_colored(self, obj):
+        color_map = {
+            "too_early": "orange",
+            "on_time": "green",
+            "too_late": "red",
+            "unknown": "gray",
+            "manual": "blue",
+        }
+        color = color_map.get(obj.left_status, "gray")
+        return format_html(
+            '<span style="color: {};">{}</span>', color, obj.get_left_status_display()
+        )
+    left_status_colored.short_description = "Статус выхода"
+
+    def entry_marked_by_trainer(self, obj):
+        return obj.marked_entry_by_trainer.full_name if obj.marked_entry_by_trainer else "-"
+    entry_marked_by_trainer.short_description = "Отметка входа (тренер)"
+
+    def exit_marked_by_trainer(self, obj):
+        return obj.marked_exit_by_trainer.full_name if obj.marked_exit_by_trainer else "-"
+    exit_marked_by_trainer.short_description = "Отметка выхода (тренер)"
+
 
 @admin.register(TrustLog)
 class TrustLogAdmin(ModelAdmin):

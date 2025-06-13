@@ -1,70 +1,52 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.utils.timezone import localtime
-from django.views.decorators.http import require_http_methods
+import json
+import logging
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.utils.timezone import now, localdate
+from django.shortcuts import get_object_or_404
 
+from apps.accounts.decorators import sso_login_required
+from apps.qr.services import manual_mark_entry
 from apps.participants.models import PersonProfile
-from apps.attendance.models import Attendance, TrustLog
 from apps.groups.models import Session
 
-from .forms import ManualMarkForm
+logger = logging.getLogger("attendance")
 
 
-@require_http_methods(["GET", "POST"])
+@csrf_exempt
+@require_POST
+@sso_login_required
 def manual_mark_view(request):
-    iin = request.GET.get("iin")
-    trainer = PersonProfile.objects.filter(iin=iin, role=PersonProfile.Role.TRAINER).first()
-    if not trainer:
-        messages.error(request, "Вы не зарегистрированы как тренер.")
-        return redirect("/")
+    try:
+        data = json.loads(request.body)
+        mark_type = data.get("type")
+        session_id = data.get("session_id")
+        participant_id = data.get("participant_id")
 
-    today = localtime().date()
-    sessions = Session.objects.filter(group__trainers=trainer, date=today).select_related("group")
+        if not session_id or not participant_id or mark_type not in ("entry", "exit"):
+            return JsonResponse({"error": "Недостаточно данных"}, status=400)
 
-    if request.method == "POST":
-        form = ManualMarkForm(request.POST, trainer=trainer)
-        if form.is_valid():
-            profile = form.cleaned_data["profile"]
-            session = form.cleaned_data["session"]
-            mark_type = form.cleaned_data["mark_type"]
+        session = get_object_or_404(Session, id=session_id)
+        if session.date != localdate():
+            return JsonResponse({"error": "Можно отмечать только текущую дату"}, status=403)
 
-            attendance, _ = Attendance.objects.get_or_create(
-                session=session,
-                profile=profile,
-                defaults={
-                    "trust_level": "manual_by_trainer",
-                    "trust_score": 0,
-                    "fingerprint_hash": f"manual-mark-{trainer.iin}",
-                }
-            )
+        participant = get_object_or_404(PersonProfile, id=participant_id)
+        trainer = request.user_profile
 
-            if mark_type == "entry" and not attendance.arrived_at:
-                attendance.arrived_at = localtime()
-                attendance.save(update_fields=["arrived_at"])
-            elif mark_type == "exit":
-                if not attendance.arrived_at:
-                    messages.error(request, "Сначала необходимо отметить вход.")
-                    return redirect(request.path)
-                if not attendance.left_at:
-                    attendance.left_at = localtime()
-                    attendance.save(update_fields=["left_at"])
+        success, result = manual_mark_entry(
+            trainer_profile=trainer,
+            participant_profile=participant,
+            session=session,
+            mark_type=mark_type
+        )
 
-            TrustLog.objects.create(
-                fingerprint=None,
-                attendance=attendance,
-                reason=f"Ручная отметка ({mark_type}) тренером {trainer.full_name} ({trainer.iin})",
-                delta=-10
-            )
-
-            messages.success(request, f"{profile.full_name} успешно отмечен на {mark_type}.")
-            return redirect(request.path)
+        if success:
+            logger.info(f"[ManualMark] {trainer.full_name} отметил {mark_type} участника {participant.full_name}")
+            return JsonResponse({"ok": True})
         else:
-            messages.error(request, "Форма заполнена некорректно.")
-    else:
-        form = ManualMarkForm(trainer=trainer)
+            return JsonResponse({"error": str(result)}, status=400)
 
-    return render(request, "attendance/manual_mark.html", {
-        "trainer": trainer,
-        "sessions": sessions,
-        "form": form,
-    })
+    except Exception as e:
+        logger.exception("[ManualMark] Ошибка при отметке")
+        return JsonResponse({"error": str(e)}, status=500)

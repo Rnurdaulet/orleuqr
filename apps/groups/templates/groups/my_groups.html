@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load i18n groups_extras %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-4">Мои группы и посещаемость</h2>
+
+        {% for group in groups %}
+            <h4 class="mt-4">{{ group.code }} — {{ group.course_name }}</h4>
+            <table class="table table-bordered table-striped table-sm attendance-table" style="width: 100%;">
+                <thead class="table-light">
+                <tr>
+                    <th>Дата</th>
+                    <th>Вход</th>
+                    <th>Статус входа</th>
+                    <th>Выход</th>
+                    <th>Статус выхода</th>
+                    <th>Доверие</th>
+                    <th>Баллы</th>
+                    <th>Отметка тренером</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for session in group.sessions.all %}
+                    {% with attendance=attendance_map|get_item:group.id|get_item:session.id %}
+                        <tr>
+                            <td>{{ session.date }}</td>
+                            <td>
+                                {% if attendance and attendance.arrived_at %}
+                                    {{ attendance.arrived_at|time:"H:i" }}
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}{{ attendance.get_arrived_status_display }}{% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if attendance and attendance.left_at %}
+                                    {{ attendance.left_at|time:"H:i" }}
+                                {% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}{{ attendance.get_left_status_display }}{% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}{{ attendance.get_trust_level_display }}{% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}{{ attendance.trust_score }}{% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if attendance %}
+                                    {% if attendance.marked_entry_by_trainer or attendance.marked_exit_by_trainer %}
+                                        {% if attendance.marked_entry_by_trainer %}Вход{% endif %}
+                                        {% if attendance.marked_exit_by_trainer %}
+                                            {% if attendance.marked_entry_by_trainer %} / {% endif %}Выход
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+
+                        </tr>
+                    {% endwith %}
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-colvis-3.2.3/b-html5-3.2.3/b-print-3.2.3/fh-4.0.2/r-3.0.4/sc-2.4.3/sl-3.0.1/datatables.min.css"
+          rel="stylesheet" integrity="sha384-IsX2Yjkl4qvL08/GCYmEttJn+HtfQ9SCC82Vb57D1A09fxW7nqJ3QDlWfwL+bOnn"
+          crossorigin="anonymous">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"
+            integrity="sha384-VFQrHzqBh5qiJIU0uGU5CIW3+OWpdGGJM9LBnGbuIH2mkICcFZ7lPd/AAtI7SNf7"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"
+            integrity="sha384-/RlQG9uf0M2vcTw3CX7fbqgbj/h8wKxw7C3zu9/GxcBPRKOEcESxaxufwRXqzq6n"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-colvis-3.2.3/b-html5-3.2.3/b-print-3.2.3/fh-4.0.2/r-3.0.4/sc-2.4.3/sl-3.0.1/datatables.min.js"
+            integrity="sha384-VesFHokYMWwORy5UWp5SxaR+c6256+0/6pLOr/bXtdCPl3zxKDP1zeMbbryoMI7m"
+            crossorigin="anonymous"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.attendance-table').forEach(table => {
+                new DataTable(table, {
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+                    },
+                    fixedHeader: true,
+                    responsive: true,
+                    paging: false,
+                    ordering: true,
+                    searching: false,
+                    dom: 'Bfrtip',
+                    buttons: [ 'excel', 'pdf', 'print']
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -23,6 +23,11 @@ class Group(models.Model):
         related_name="trainer_groups",
         verbose_name=_("Тренеры")
     )
+    use_time_limits = models.BooleanField(
+        _("Ограничение по времени отметок"),
+        default=False,
+        help_text=_("Если включено, то отметка доступна только в пределах временных окон сессии"),
+    )
 
     def __str__(self):
         return f"{self.code} — {self.course_name}"
@@ -56,6 +61,18 @@ class Session(models.Model):
     # Разные QR-токены на вход и выход
     qr_token_entry = models.UUIDField(_("QR токен (вход)"), unique=True, default=uuid.uuid4)
     qr_token_exit = models.UUIDField(_("QR токен (выход)"), unique=True, default=uuid.uuid4)
+    qr_file_entry = models.FileField(
+        upload_to='sessions_qr/entry/',
+        null=True,
+        blank=True,
+        verbose_name="Файл с QR-кодом входа (SVG или PNG)"
+    )
+    qr_file_exit = models.FileField(
+        upload_to='sessions_qr/exit/',
+        null=True,
+        blank=True,
+        verbose_name="Файл с QR-кодом выхода (SVG или PNG)"
+    )
 
     class Meta:
         unique_together = ("group", "date")

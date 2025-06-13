@@ -45,16 +45,12 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "apps.accounts.middleware.AuthenticationMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-# Auth
-# LOGIN_URL = "/login/ecp/"
-# LOGIN_REDIRECT_URL = "/"
-# LOGOUT_REDIRECT_URL = "/"
 
 ROOT_URLCONF = "orleuqr.urls"
 WSGI_APPLICATION = "orleuqr.wsgi.application"
@@ -312,3 +308,4 @@ OIDC_OP_JWKS_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-conn
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+SITE_BASE_URL = "http://127.0.0.1:8000"

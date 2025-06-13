@@ -1,6 +1,8 @@
 from django.urls import path
-from . import views
+from .views import manual_mark_view
+
+app_name = "attendance"
 
 urlpatterns = [
-    path("manual-mark/", views.manual_mark_view, name="manual_mark"),
+    path("manual-mark/", manual_mark_view, name="manual_mark"),
 ]

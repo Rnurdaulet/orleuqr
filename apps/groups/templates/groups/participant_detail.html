@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load i18n groups_extras %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Детальная посещаемость: {{ participant.full_name }}</h3>
+  <p class="text-muted">Группа: {{ group.code }} — {{ group.course_name }}</p>
+
+  <table id="participant-table" class="table table-bordered table-sm text-center align-middle w-100">
+    <thead class="table-light">
+      <tr>
+        <th>Дата</th>
+        <th>Вход</th>
+        <th>Статус входа</th>
+        <th>Выход</th>
+        <th>Статус выхода</th>
+        <th>Доверие</th>
+        <th>Отметка вход</th>
+        <th>Отметка выход</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% now "Y-m-d" as today_str %}
+      {% for session in sessions %}
+        {% with att=attendance_by_session|get_item:session.id %}
+        <tr class="{% if session.date|stringformat:'Y-m-d' == today_str %}table-info{% endif %}">
+          <td>{{ session.date }}</td>
+          <td>{% if att and att.arrived_at %}{{ att.arrived_at|time:"H:i" }}{% else %}—{% endif %}</td>
+          <td>{% if att %}{{ att.get_arrived_status_display }}{% else %}—{% endif %}</td>
+          <td>{% if att and att.left_at %}{{ att.left_at|time:"H:i" }}{% else %}—{% endif %}</td>
+          <td>{% if att %}{{ att.get_left_status_display }}{% else %}—{% endif %}</td>
+          <td>{% if att %}{{ att.get_trust_level_display }}{% else %}—{% endif %}</td>
+          <td>{% if att and att.marked_entry_by_trainer %}{{ att.marked_entry_by_trainer.full_name }}{% else %}—{% endif %}</td>
+          <td>{% if att and att.marked_exit_by_trainer %}{{ att.marked_exit_by_trainer.full_name }}{% else %}—{% endif %}</td>
+          <td>
+     {% if session.date == today %}
+
+              <button
+                class="btn btn-sm btn-outline-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#markModal"
+                data-session-id="{{ session.id }}"
+                {% if att %}data-attendance-id="{{ att.id }}"{% endif %}
+                data-disable-entry="{% if att and att.arrived_at %}1{% else %}0{% endif %}"
+                data-disable-exit="{% if att and att.left_at %}1{% else %}0{% endif %}"
+              >✍️</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Модалка -->
+<div class="modal fade" id="markModal" tabindex="-1" aria-labelledby="markModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="markModalLabel">Ручная отметка</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>Участник: <strong>{{ participant.full_name }}</strong></p>
+        <button id="mark-entry-btn" class="btn btn-success btn-sm mb-2 w-100">Отметить вход</button>
+        <button id="mark-exit-btn" class="btn btn-danger btn-sm w-100">Отметить выход</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-html5-3.2.3/b-print-3.2.3/datatables.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-html5-3.2.3/b-print-3.2.3/datatables.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  new DataTable("#participant-table", {
+    language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json" },
+    pageLength: 25,
+    ordering: false,
+    dom: "Bfrtip",
+    buttons: ["excel", "pdf", "print"]
+  });
+
+  let sessionId = null;
+  let attendanceId = null;
+
+  const entryBtn = document.getElementById("mark-entry-btn");
+  const exitBtn = document.getElementById("mark-exit-btn");
+
+  document.getElementById("markModal").addEventListener("show.bs.modal", function (event) {
+    const btn = event.relatedTarget;
+    sessionId = btn.getAttribute("data-session-id");
+    attendanceId = btn.getAttribute("data-attendance-id");
+
+    entryBtn.disabled = btn.getAttribute("data-disable-entry") === "1";
+    exitBtn.disabled = btn.getAttribute("data-disable-exit") === "1";
+  });
+
+  function sendMark(type) {
+    fetch("{% url 'attendance:manual_mark' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}"
+      },
+      body: JSON.stringify({
+        type: type,
+        session_id: sessionId,
+        participant_id: "{{ participant.id }}",
+        id: attendanceId || null
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) location.reload();
+      else alert("Ошибка: " + (data.error || "Не удалось отметить"));
+    })
+    .catch(err => alert("Ошибка сети: " + err));
+  }
+
+  entryBtn.addEventListener("click", () => sendMark("entry"));
+  exitBtn.addEventListener("click", () => sendMark("exit"));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Сканер QR{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Сканирование QR-кода</h2>
+
+  <div class="text-center mb-3">
+    <video id="qr-video" class="w-100 border" style="max-height: 300px;" muted autoplay></video>
+    <p class="mt-2">
+      <strong>Результат:</strong>
+      <span id="qr-result" class="text-muted">—</span>
+    </p>
+  </div>
+
+  <hr class="my-4">
+
+  <h4>Ручной ввод токена</h4>
+  <form id="qr-form" class="mb-3">
+    <label for="token">Введите QR-ссылку:</label>
+    <input type="text" id="token" name="token" class="form-control" placeholder="https://...">
+    <button type="submit" class="btn btn-primary mt-3">Перейти</button>
+  </form>
+</div>
+
+<script type="module">
+  import QrScanner from "{% static 'js/qr-scanner/qr-scanner.min.js' %}";
+
+  const video = document.getElementById('qr-video');
+  const resultEl = document.getElementById('qr-result');
+
+  const scanner = new QrScanner(video, result => {
+    resultEl.textContent = result;
+
+    if (result.includes("/qr/mark/") || result.includes("/qr/leave/")) {
+      window.location.href = result;
+    } else {
+      resultEl.textContent = "⚠️ Не является QR-кодом посещения";
+    }
+
+    scanner.stop();
+  });
+
+  scanner.start();
+
+  document.getElementById('qr-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const url = document.getElementById('token').value.trim();
+    if (!url) {
+      alert("Введите ссылку");
+      return;
+    }
+
+    if (url.includes("/qr/mark/") || url.includes("/qr/leave/")) {
+      window.location.href = url;
+    } else {
+      alert("⚠️ Не является QR-кодом посещения");
+    }
+  });
+</script>
+{% endblock %}
