@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     sessionsMap.set(a.session_id, a.date);
     if (!participantsMap.has(a.participant_id)) {
       participantsMap.set(a.participant_id, {
+            id: a.participant_id,
         name: a.participant,
         attendance: {}
       });
@@ -81,7 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Собираем HTML строки
-    tr.innerHTML = `<td>${i + 1}</td><td>${p.name}</td>${todayCell}` +
+tr.innerHTML = `<td>${i + 1}</td><td><a href="/groups/{{ group.id }}/manual-attendance/${p.id}/" target="_blank">${p.name}</a></td>${todayCell}` +
       sessions.map(([id]) => {
         const a = p.attendance[id];
         if (!a) return `<td>—</td>`;

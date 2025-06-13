@@ -13,6 +13,7 @@ class Attendance(BaseModel):
         MANUAL = "manual_by_trainer", _("Ручная отметка")
 
     class TimeStatus(models.TextChoices):
+        MANUAL = "by_trainer", _("Ручная отметка")
         TOO_EARLY = "too_early", _("Рано")
         ON_TIME = "on_time", _("Во время")
         TOO_LATE = "too_late", _("Опоздал")

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from django.db.models import Prefetch, Q
 from django.shortcuts import render, get_object_or_404
-from django.utils.timezone import now
+from django.utils.timezone import now, localdate
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.contrib import messages
 
@@ -9,6 +9,8 @@ from apps.accounts.decorators import sso_login_required
 from apps.attendance.models import Attendance
 from apps.groups.models import Group, Session
 from apps.groups.services import generate_session_qr_pdf_on_fly
+from apps.participants.models import PersonProfile
+
 
 # ------------------------------
 # Участник: список своих групп
@@ -172,6 +174,31 @@ def manual_attendance_data(request, group_id, participant_id):
 
     return JsonResponse({"attendances": data})
 
+
+@sso_login_required
+def participant_attendance_detail_view(request, group_id, participant_id):
+    user = request.user_profile
+    group = get_object_or_404(Group.objects.prefetch_related("sessions", "trainers"), id=group_id)
+    participant = get_object_or_404(PersonProfile, id=participant_id)  # <-- исправлено
+
+    if user not in group.trainers.all():
+        return HttpResponseForbidden("Нет доступа к группе")
+
+    sessions = group.sessions.all().order_by("date")
+    attendance_by_session = {
+        att.session_id: att for att in Attendance.objects.filter(
+            session__group=group,
+            profile=participant
+        ).select_related("session", "marked_entry_by_trainer", "marked_exit_by_trainer")
+    }
+
+    return render(request, "groups/participant_detail.html", {
+        "group": group,
+        "participant": participant,
+        "sessions": sessions,
+        "attendance_by_session": attendance_by_session,
+        "today": localdate(),
+    })
 # ------------------------------
 # Генерация PDF с QR по сессии
 # ------------------------------

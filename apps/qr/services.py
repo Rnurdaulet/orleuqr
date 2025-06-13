@@ -127,7 +127,6 @@ def manual_mark_entry(trainer_profile: PersonProfile, participant_profile: Perso
             "trust_level": Attendance.TrustLevel.MANUAL,
             "trust_score": 0,
             "fingerprint_hash": f"manual-mark-{trainer_profile.iin}",
-            "marked_by_trainer": trainer_profile,
             "arrived_status": Attendance.TimeStatus.UNKNOWN,
             "left_status": Attendance.TimeStatus.UNKNOWN,
         }
@@ -137,6 +136,7 @@ def manual_mark_entry(trainer_profile: PersonProfile, participant_profile: Perso
     if mark_type == "entry" and not attendance.arrived_at:
         attendance.arrived_at = now
         attendance.arrived_status = Attendance.TimeStatus.MANUAL
+        attendance.marked_entry_by_trainer = trainer_profile
         changed = True
     elif mark_type == "exit":
         if not attendance.arrived_at:
@@ -144,6 +144,7 @@ def manual_mark_entry(trainer_profile: PersonProfile, participant_profile: Perso
         if not attendance.left_at:
             attendance.left_at = now
             attendance.left_status = Attendance.TimeStatus.MANUAL
+            attendance.marked_exit_by_trainer = trainer_profile
             changed = True
 
     if changed:
