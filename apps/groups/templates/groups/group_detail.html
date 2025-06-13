@@ -57,11 +57,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const thead = document.getElementById("thead-row");
 
   // Вставляем остальные сессии после "Сегодня"
-  sessions.forEach(([_, date]) => {
-    const th = document.createElement("th");
-    th.textContent = formatDate(date);
-    thead.appendChild(th);
-  });
+sessions.forEach(([session_id, date]) => {
+  const th = document.createElement("th");
+  const link = `{% url 'groups:session_qr_pdf' 99999 %}`.replace("99999", session_id);
+  th.innerHTML = `${formatDate(date)}<br><a href="${link}" target="_blank">QR</a>`;
+  thead.appendChild(th);
+});
 
   // Тело таблицы
   const tbody = document.getElementById("attendance-tbody");
