@@ -27,11 +27,20 @@
                                 <p><strong>Роль:</strong> {{ user_profile.get_role_display }}</p>
                             </div>
                             <div class="col-md-6 text-end">
-                                <a href="/qr/scan/" class="btn btn-primary">
-                                    <i class="bi bi-qr-code-scan"></i> Сканировать QR
-                                </a> <a href="{% url 'groups:my_groups' %}" class="btn btn-primary">
-                                <i class="bi bi-qr-code-scan"></i> Мои группы
-                            </a>
+                                {% if user_profile.role == 'participant' %}
+                                    <a href="/qr/scan/" class="btn btn-primary">
+                                        <i class="bi bi-qr-code-scan"></i> Сканировать QR
+                                    </a>
+                                    <a href="{% url 'groups:my_groups' %}" class="btn btn-primary">
+                                        <i class="bi bi-qr-code-scan"></i> Мой журнал
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'groups:trainer_groups' %}" class="btn btn-primary">
+                                        <i class="bi bi-qr-code-scan"></i> Мои группы
+                                    </a>
+
+                                {% endif %}
+
                             </div>
                         </div>
                     </div>
