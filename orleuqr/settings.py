@@ -144,6 +144,7 @@ SESSION_CACHE_ALIAS = "default"
 
 # Trusted domains
 CSRF_TRUSTED_ORIGINS = [
+    "https://qr.odx.kz",
     "https://rr.orleu.edu.kz",
 ]
 
