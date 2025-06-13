@@ -296,16 +296,19 @@ LOGGING = {
 #     release="platformppi@2025.05.26",
 # )
 
-OIDC_RP_CLIENT_ID = 'qr'
-OIDC_RP_CLIENT_SECRET = 'krstCUoqHOMyVwP3cjRumEYccsRe0Ym6'
-OIDC_RP_SCOPES = 'openid email profile'
+OIDC_RP_CLIENT_ID = os.getenv("OIDC_RP_CLIENT_ID")
+OIDC_RP_CLIENT_SECRET = os.getenv("OIDC_RP_CLIENT_SECRET")
+OIDC_RP_SCOPES = os.getenv("OIDC_RP_SCOPES", "openid email profile")
 
-OIDC_OP_AUTHORIZATION_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/auth'
-OIDC_OP_TOKEN_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/token'
-OIDC_OP_USER_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/userinfo'
-OIDC_OP_JWKS_ENDPOINT = 'http://localhost:8080/realms/orleu/protocol/openid-connect/certs'
+OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv("OIDC_OP_AUTHORIZATION_ENDPOINT")
+OIDC_OP_TOKEN_ENDPOINT = os.getenv("OIDC_OP_TOKEN_ENDPOINT")
+OIDC_OP_USER_ENDPOINT = os.getenv("OIDC_OP_USER_ENDPOINT")
+OIDC_OP_JWKS_ENDPOINT = os.getenv("OIDC_OP_JWKS_ENDPOINT")
+
+SITE_BASE_URL = os.getenv("SITE_BASE_URL", "http://127.0.0.1:8000")
+
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-SITE_BASE_URL = "http://127.0.0.1:8000"
+
