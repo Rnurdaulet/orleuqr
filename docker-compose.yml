@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  django:
+    container_name: orleuqr
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: gunicorn orleuqr.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.orleuqr.rule=Host(`qr.odx.kz`)"
+      - "traefik.http.routers.orleuqr.entrypoints=websecure"
+      - "traefik.http.routers.orleuqr.tls.certresolver=myresolver"
+      - "traefik.http.services.orleuqr.loadbalancer.server.port=8000"
+    networks:
+      - traefik_traefik-net
+      - default
+
+  db:
+    image: postgres:15
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - default
+
+networks:
+  traefik_traefik-net:
+    external: true
+  default:
+
+volumes:
+  postgres_data:
