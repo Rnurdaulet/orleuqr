@@ -82,7 +82,7 @@ def generate_session_qr_pdf_on_fly(session_id, mode='entry'):
     # Собираем URL для QR
     base_url = getattr(settings, "SITE_BASE_URL", "http://127.0.0.1:8000").rstrip('/')
     token = session.qr_token_entry if mode == 'entry' else session.qr_token_exit
-    qr_url = f"{base_url}/{'mark' if mode=='entry' else 'leave'}/{token}/"
+    qr_url = f"{base_url}/qr/{'mark' if mode=='entry' else 'leave'}/{token}/"
 
     # Рисуем QR в память
     buf_qr = BytesIO()
