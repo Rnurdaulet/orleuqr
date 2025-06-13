@@ -34,6 +34,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
       - default
+  redis:
+    image: redis:7
+    restart: always
+    networks:
+      - default
 
 networks:
   traefik_traefik-net:

@@ -173,8 +173,8 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Настройки Celery
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL брокера сообщений
+# CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL брокера сообщений
 CELERY_ACCEPT_CONTENT = ['json']  # Формат данных
 CELERY_TASK_SERIALIZER = 'json'  # Сериализация задач
 
@@ -185,16 +185,20 @@ CELERYD_TASK_TIME_LIMIT = 300  # секунды
 # Настройки периодических задач через Django-Celery-Beat
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
 
+CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")
+CELERY_BROKER_URL = os.getenv("REDIS_URL")
+
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',  # Адрес и порт вашего Redis-сервера
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
-        'KEY_PREFIX': 'orleuqr',  # Префикс для ключей в Redis
+        "KEY_PREFIX": "orleuqr",
     }
 }
+
 
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
