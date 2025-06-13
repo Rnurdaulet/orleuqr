@@ -9,7 +9,8 @@ def login_view(request):
     try:
         protocol = 'https' if not settings.DEBUG else 'http'
         host = request.get_host()
-        redirect_uri = f"{protocol}://{host}/accounts/callback/"
+        # redirect_uri = f"{protocol}://{host}/accounts/callback/"
+        redirect_uri = settings.SITE_BASE_URL.rstrip("/") + "/accounts/callback/"
 
         logger.info(f"Starting OIDC login process. Redirect URI: {redirect_uri}")
         return oauth.keycloak.authorize_redirect(request, redirect_uri)
