@@ -55,3 +55,4 @@ django-model-utils==5.0.0
 authlib==1.3.0
 django-authlib==0.17.1
 fpdf2
+segno
