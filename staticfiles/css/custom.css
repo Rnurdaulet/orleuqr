@@ -1,0 +1,158 @@
+/* Custom styles for Orleu QR system */
+
+/* Custom card hover effects */
+.custom-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.custom-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Profile info styling */
+.profile-info {
+    background: #f8f9fa;
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+/* Action buttons styling */
+.action-btn {
+    padding: 0.75rem 1.5rem;
+    margin: 0.25rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Footer custom styling */
+footer {
+    border-top: 1px solid #e9ecef;
+}
+
+/* Navbar brand text */
+.navbar-brand-text {
+    margin-left: 0.5rem;
+    font-weight: 600;
+}
+
+/* Изящные стили для аватаров */
+.avatar.avatar-circle {
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar.avatar-circle:hover {
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+/* Улучшенные инициалы */
+.avatar.avatar-circle .avatar-initials {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-align: center;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Цветовые варианты для разных букв (без градиентов!) */
+.avatar.avatar-circle:not([class*="avatar-soft"]):not([class*="avatar-dark"]) {
+    background: #377dff;
+    color: white;
+}
+
+/* Welcome section */
+.welcome-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+/* Feature icons */
+.feature-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: #377dff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin: 0 auto 1rem;
+}
+
+/* Quick actions grid */
+.quick-actions {
+    margin-top: 2rem;
+}
+
+.quick-action-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Темная тема */
+[data-hs-appearance="dark"] .avatar.avatar-circle {
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.3);
+}
+
+[data-hs-appearance="dark"] .avatar.avatar-circle:hover {
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.4);
+}
+
+[data-hs-appearance="dark"] .profile-info {
+    background: #1e2022;
+}
+
+/* Responsive adjustments */
+/* Tom-select styling fixes */
+.tom-select-custom .ts-wrapper {
+    min-width: 80px !important;
+}
+
+.tom-select-custom .ts-wrapper.form-select-borderless {
+    min-width: 80px !important;
+}
+
+.tom-select-custom .ts-control {
+    min-width: 80px !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+@media (max-width: 768px) {
+    .profile-info {
+        padding: 1.5rem;
+    }
+    
+    .welcome-section {
+        padding: 1.5rem;
+    }
+} 

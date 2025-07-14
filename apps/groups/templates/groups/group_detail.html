@@ -1,127 +1,590 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load static i18n %}
+
+{% block title %}{{ group.code }} - Посещаемость - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-3">Посещаемость группы: {{ group.code }} — {{ group.course_name }}</h2>
+    <!-- Content -->
+    <div class="content container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="row align-items-center mb-3">
+                <div class="col-sm mb-2 mb-sm-0">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-no-gutter">
+                            <li class="breadcrumb-item"><a class="breadcrumb-link" href="{% url 'groups:trainer_groups' %}">Мои группы</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ group.code }}</li>
+                        </ol>
+                    </nav>
+                    <h1 class="page-header-title">Посещаемость группы: {{ group.code }} <span class="badge bg-soft-dark text-dark ms-2">{{ group.participants.count }}</span></h1>
+                </div>
+                <!-- End Col -->
 
-  <div class="mb-2 small text-muted">
-    <strong>Легенда:</strong> ✓ — во время, ! — опоздал, ~ — рано, ? — неизвестно, * — отметка вручную
-  </div>
+                <div class="col-sm-auto">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#legendModal">
+                            <i class="bi-info-circle me-1"></i> Легенда
+                        </button>
+                    </div>
+                </div>
+                <!-- End Col -->
+            </div>
+            <!-- End Row -->
+        </div>
+        <!-- End Page Header -->
 
-  <table id="attendance-table" class="table table-bordered table-sm text-center align-middle w-100">
-    <thead class="table-light">
-      <tr id="thead-row">
-        <th>№</th>
-        <th>Участник</th>
-        <th>Сегодня</th>
-      </tr>
-    </thead>
-    <tbody id="attendance-tbody"></tbody>
-  </table>
-</div>
+        <div class="row justify-content-end mb-3">
+            <div class="col-lg">
+                <!-- Datatable Info -->
+                <div id="datatableCounterInfo" style="display: none;">
+                    <div class="d-sm-flex justify-content-lg-end align-items-sm-center">
+                        <span class="d-block d-sm-inline-block fs-5 me-3 mb-2 mb-sm-0">
+                            <span id="datatableCounter">0</span>
+                            Выбрано
+                        </span>
+                        <a class="btn btn-outline-danger btn-sm mb-2 mb-sm-0 me-2" href="javascript:;">
+                            <i class="bi-trash"></i> Удалить
+                        </a>
+                        <a class="btn btn-white btn-sm mb-2 mb-sm-0 me-2" href="javascript:;">
+                            <i class="bi-download"></i> Экспорт выбранных
+                        </a>
+                        <a class="btn btn-white btn-sm mb-2 mb-sm-0" href="javascript:;">
+                            <i class="bi-envelope"></i> Отправить уведомления
+                        </a>
+                    </div>
+                </div>
+                <!-- End Datatable Info -->
+            </div>
+        </div>
+        <!-- End Row -->
+
+        <!-- Card -->
+        <div class="card">
+            <!-- Header -->
+            <div class="card-header card-header-content-md-between">
+                <div class="mb-2 mb-md-0">
+                    <form>
+                        <!-- Search -->
+                        <div class="input-group input-group-merge input-group-flush">
+                            <div class="input-group-prepend input-group-text">
+                                <i class="bi-search"></i>
+                            </div>
+                            <input id="datatableSearch" type="search" class="form-control" placeholder="Поиск участников..." aria-label="Поиск участников">
+                        </div>
+                        <!-- End Search -->
+                    </form>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <div id="datatable-buttons" class="d-flex gap-2"></div>
+                    
+                    <button class="btn btn-white" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAttendanceFilter" aria-controls="offcanvasAttendanceFilter">
+                        <i class="bi-filter me-1"></i> Фильтры
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-white w-100" id="showHideDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                            <i class="bi-table me-1"></i> Колонки <span class="badge bg-soft-dark text-dark rounded-circle ms-1">4</span>
+                        </button>
+
+                        <div class="dropdown-menu dropdown-menu-end dropdown-card" aria-labelledby="showHideDropdown" style="width: 15rem;">
+                            <div class="card card-sm">
+                                <div class="card-body">
+                                    <div class="d-grid gap-3">
+                                        <!-- Form Switch -->
+                                        <label class="row form-check form-switch" for="toggleColumn_participant">
+                                            <span class="col-8 col-sm-9 ms-0">
+                                                <span class="me-2">Участник</span>
+                                            </span>
+                                            <span class="col-4 col-sm-3 text-end">
+                                                <input type="checkbox" class="form-check-input" id="toggleColumn_participant" checked>
+                                            </span>
+                                        </label>
+                                        <!-- End Form Switch -->
+
+                                        <!-- Form Switch -->
+                                        <label class="row form-check form-switch" for="toggleColumn_today">
+                                            <span class="col-8 col-sm-9 ms-0">
+                                                <span class="me-2">Сегодня</span>
+                                            </span>
+                                            <span class="col-4 col-sm-3 text-end">
+                                                <input type="checkbox" class="form-check-input" id="toggleColumn_today" checked>
+                                            </span>
+                                        </label>
+                                        <!-- End Form Switch -->
+
+                                        <!-- Form Switch -->
+                                        <label class="row form-check form-switch" for="toggleColumn_sessions">
+                                            <span class="col-8 col-sm-9 ms-0">
+                                                <span class="me-2">Занятия</span>
+                                            </span>
+                                            <span class="col-4 col-sm-3 text-end">
+                                                <input type="checkbox" class="form-check-input" id="toggleColumn_sessions" checked>
+                                            </span>
+                                        </label>
+                                        <!-- End Form Switch -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End Dropdown -->
+                </div>
+            </div>
+            <!-- End Header -->
+
+            <!-- Table -->
+            <div class="table-responsive datatable-custom">
+                <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table" data-hs-datatables-options='{
+                         "columnDefs": [{
+                            "targets": [0],
+                            "width": "5%",
+                            "orderable": false
+                         }],
+                         "order": [],
+                         "info": {
+                           "totalQty": "#datatableWithPaginationInfoTotalQty"
+                         },
+                         "search": "#datatableSearch",
+                         "entries": "#datatableEntries",
+                         "pageLength": 12,
+                         "isResponsive": false,
+                         "isShowPaging": false,
+                         "pagination": "datatablePagination"
+                       }'>
+                    <thead class="thead-light">
+                        <tr id="thead-row">
+                            <th>Участник</th>
+                            <th>Сегодня</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-tbody"></tbody>
+                </table>
+            </div>
+            <!-- End Table -->
+
+            <!-- Footer -->
+            <div class="card-footer">
+                <div class="row justify-content-center justify-content-sm-between align-items-sm-center">
+                    <div class="col-sm mb-2 mb-sm-0">
+                        <div class="d-flex justify-content-center justify-content-sm-start align-items-center">
+                            <span class="me-2">Показывать:</span>
+
+                            <!-- Select -->
+                            <div class="tom-select-custom">
+                                <select id="datatableEntries" class="js-select form-select form-select-borderless w-auto" autocomplete="off" data-hs-tom-select-options='{
+                                        "searchInDropdown": false,
+                                        "hideSearch": true
+                                      }'>
+                                    <option value="12">12</option>
+                                    <option value="15" selected>15</option>
+                                    <option value="20">20</option>
+                                    <option value="25">25</option>
+                                </select>
+                            </div>
+                            <!-- End Select -->
+
+                            <span class="text-secondary me-2">из</span>
+
+                            <!-- Pagination Quantity -->
+                            <span id="datatableWithPaginationInfoTotalQty"></span>
+                        </div>
+                    </div>
+                    <!-- End Col -->
+
+                    <div class="col-sm-auto">
+                        <div class="d-flex justify-content-center justify-content-sm-end">
+                            <!-- Pagination -->
+                            <nav id="datatablePagination" aria-label="Activity pagination"></nav>
+                        </div>
+                    </div>
+                    <!-- End Col -->
+                </div>
+                <!-- End Row -->
+            </div>
+            <!-- End Footer -->
+        </div>
+        <!-- End Card -->
+    </div>
+    <!-- End Content -->
+
+    <!-- Filter Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAttendanceFilter" aria-labelledby="offcanvasAttendanceFilterLabel">
+        <div class="offcanvas-header">
+            <h4 id="offcanvasAttendanceFilterLabel" class="mb-0">Фильтры</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <span class="text-cap small">Статус посещения</span>
+
+            <div class="d-grid gap-2 mb-2">
+                <!-- Form Check -->
+                <div class="form-check">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="" id="statusFilterRadio1" data-target-column-index="2">
+                    <label class="form-check-label" for="statusFilterRadio1">Все статусы</label>
+                </div>
+                <!-- End Form Check -->
+
+                <!-- Form Check -->
+                <div class="form-check">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="on_time" id="statusFilterRadio2" data-target-column-index="2">
+                    <label class="form-check-label" for="statusFilterRadio2">Вовремя</label>
+                </div>
+                <!-- End Form Check -->
+
+                <!-- Form Check -->
+                <div class="form-check">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="too_late" id="statusFilterRadio3" data-target-column-index="2">
+                    <label class="form-check-label" for="statusFilterRadio3">Опоздали</label>
+                </div>
+                <!-- End Form Check -->
+
+                <!-- Form Check -->
+                <div class="form-check">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="too_early" id="statusFilterRadio4" data-target-column-index="2">
+                    <label class="form-check-label" for="statusFilterRadio4">Рано</label>
+                </div>
+                <!-- End Form Check -->
+
+                <!-- Form Check -->
+                <div class="form-check">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="unknown" id="statusFilterRadio5" data-target-column-index="2">
+                    <label class="form-check-label" for="statusFilterRadio5">Неизвестно</label>
+                </div>
+                <!-- End Form Check -->
+            </div>
+
+            <a class="link mt-2" href="javascript:;" onclick="clearFilters()">
+                <i class="bi-x"></i> Очистить
+            </a>
+
+            <hr>
+
+            <span class="text-cap small">Тип отметки</span>
+
+            <div class="d-grid gap-2 mb-2">
+                <!-- Form Check -->
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="manualMarkFilter">
+                    <label class="form-check-label" for="manualMarkFilter">Только ручные отметки</label>
+                </div>
+                <!-- End Form Check -->
+
+                <!-- Form Check -->
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="qrMarkFilter">
+                    <label class="form-check-label" for="qrMarkFilter">Только QR-отметки</label>
+                </div>
+                <!-- End Form Check -->
+            </div>
+
+            <a class="link mt-2" href="javascript:;" onclick="clearFilters()">
+                <i class="bi-x"></i> Очистить
+            </a>
+        </div>
+        <!-- End Body -->
+
+        <!-- Footer -->
+        <div class="offcanvas-footer">
+            <div class="row gx-2">
+                <div class="col">
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-white" onclick="clearFilters()">Очистить все фильтры</button>
+                    </div>
+                </div>
+                <!-- End Col -->
+
+                <div class="col">
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="offcanvas">Применить</button>
+                    </div>
+                </div>
+                <!-- End Col -->
+            </div>
+            <!-- End Row -->
+        </div>
+        <!-- End Footer -->
+    </div>
+    <!-- End Filter Offcanvas -->
+
+    <!-- Legend Modal -->
+    <div class="modal fade" id="legendModal" tabindex="-1" aria-labelledby="legendModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="legendModalLabel">Легенда обозначений</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-soft-success text-success me-3">✓</span>
+                                <div>
+                                    <strong>Вовремя</strong>
+                                    <p class="text-muted mb-0">Участник пришел в установленное время</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-soft-warning text-warning me-3">!</span>
+                                <div>
+                                    <strong>Опоздал</strong>
+                                    <p class="text-muted mb-0">Участник пришел с опозданием</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-soft-info text-info me-3">~</span>
+                                <div>
+                                    <strong>Рано</strong>
+                                    <p class="text-muted mb-0">Участник пришел слишком рано</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-soft-secondary text-secondary me-3">?</span>
+                                <div>
+                                    <strong>Неизвестно</strong>
+                                    <p class="text-muted mb-0">Статус не определен</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-soft-primary text-primary me-3">*</span>
+                                <div>
+                                    <strong>Отметка вручную</strong>
+                                    <p class="text-muted mb-0">Участник отмечен тренером вручную</p>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Понятно</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Legend Modal -->
 {% endblock %}
 
 {% block extra_js %}
-<link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-html5-3.2.3/b-print-3.2.3/datatables.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-<script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-html5-3.2.3/b-print-3.2.3/datatables.min.js"></script>
+    <!-- JS Implementing Plugins -->
+    <script src="{% static 'main/assets/vendor/datatables/media/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net.extensions/select/select.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/pdfmake/build/vfs_fonts.js' %}"></script>
 
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const res = await fetch("{% url 'groups:attendance_json' group.id %}");
-  const raw = await res.json();
 
-  const sessionsMap = new Map();
-  const participantsMap = new Map();
+    <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const res = await fetch("{% url 'groups:attendance_json' group.id %}");
+        const raw = await res.json();
 
-  raw.data.forEach(a => {
-    sessionsMap.set(a.session_id, a.date);
-    if (!participantsMap.has(a.participant_id)) {
-      participantsMap.set(a.participant_id, {
-            id: a.participant_id,
-        name: a.participant,
-        attendance: {}
-      });
+        const sessionsMap = new Map();
+        const participantsMap = new Map();
+
+        raw.data.forEach(a => {
+            sessionsMap.set(a.session_id, a.date);
+            if (!participantsMap.has(a.participant_id)) {
+                participantsMap.set(a.participant_id, {
+                    id: a.participant_id,
+                    name: a.participant,
+                    attendance: {}
+                });
+            }
+            participantsMap.get(a.participant_id).attendance[a.session_id] = a;
+        });
+
+        const sessions = Array.from(sessionsMap.entries()).sort((a, b) => new Date(a[1]) - new Date(b[1]));
+        const participants = Array.from(participantsMap.values());
+
+        const todayISO = new Date().toISOString().slice(0, 10);
+
+        // Шапка таблицы
+        const thead = document.getElementById("thead-row");
+
+        // Вставляем остальные сессии после "Сегодня"
+        sessions.forEach(([session_id, date]) => {
+            const th = document.createElement("th");
+            const link = `{% url 'groups:session_qr_pdf' 99999 %}`.replace("99999", session_id);
+            th.innerHTML = formatDate(date) + '<br><a href="' + link + '" target="_blank" class="btn btn-xs btn-outline-primary">QR</a>';
+            thead.appendChild(th);
+        });
+
+        // Тело таблицы
+        const tbody = document.getElementById("attendance-tbody");
+
+        participants.forEach((p, i) => {
+            const todaySession = sessions.find(([_, date]) => date === todayISO);
+            let todayCell = '<td>—</td>';
+            if (todaySession) {
+                const a = p.attendance[todaySession[0]];
+                if (a) {
+                    todayCell = '<td class="text-start">' +
+                        '<div><strong>В:</strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
+                        '<div><strong>У:</strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
+                        '</td>';
+                }
+            }
+
+            // Собираем HTML строки
+            const tr = document.createElement("tr");
+            let innerHTML = '<td>' +
+                '<a class="d-flex align-items-center" href="/groups/{{ group.id }}/manual-attendance/' + p.id + '/" target="_blank">' +
+                '<div class="flex-shrink-0">' +
+                '<div class="avatar avatar-sm avatar-circle">' +
+                '<span class="avatar-initials">' + p.name.slice(0, 1).toUpperCase() + '</span>' +
+                '</div>' +
+                '</div>' +
+                '<div class="flex-grow-1 ms-3">' +
+                '<h5 class="text-inherit mb-0">' + p.name + '</h5>' +
+                '</div>' +
+                '</a>' +
+                '</td>' +
+                todayCell;
+
+            sessions.forEach(([id]) => {
+                const a = p.attendance[id];
+                if (!a) {
+                    innerHTML += '<td>—</td>';
+                } else {
+                    innerHTML += '<td class="text-start">' +
+                        '<div><strong>В:</strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
+                        '<div><strong>У:</strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
+                        '</td>';
+                }
+            });
+
+            tr.innerHTML = innerHTML;
+
+            tbody.appendChild(tr);
+        });
+
+        // Инициализация DataTable с кнопками экспорта
+        HSCore.components.HSDatatables.init($('#datatable'), {
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'excel',
+                    className: 'btn btn-outline-secondary me-2',
+                    text: '<i class="bi-file-earmark-excel me-1"></i> Excel'
+                },
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-outline-secondary me-2',
+                    text: '<i class="bi-file-earmark-pdf me-1"></i> PDF',
+                    title: 'Посещаемость группы: {{ group.code|escapejs }}',
+                    orientation: 'landscape',
+                    pageSize: 'A4',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                }
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json',
+                zeroRecords: '<div class="text-center p-4">' +
+                    '<img class="mb-3" src="{% static 'main/assets/svg/illustrations/oc-error.svg' %}" alt="Нет данных" style="width: 10rem;" data-hs-theme-appearance="default">' +
+                    '<img class="mb-3" src="{% static 'main/assets/svg/illustrations-light/oc-error.svg' %}" alt="Нет данных" style="width: 10rem;" data-hs-theme-appearance="dark">' +
+                    '<p class="mb-0">Нет данных для отображения</p>' +
+                    '</div>'
+            }
+        });
+
+        const datatable = HSCore.components.HSDatatables.getItem('datatable');
+
+        // Перемещаем кнопки DataTables в наш контейнер
+        setTimeout(() => {
+            const buttons = $('.dataTables_wrapper .dt-buttons');
+            buttons.appendTo('#datatable-buttons');
+        }, 100);
+
+        // Filter functionality
+        document.querySelectorAll('.js-datatable-filter').forEach(function (item) {
+            item.addEventListener('change', function(e) {
+                var elVal = e.target.value,
+                    targetColumnIndex = e.target.getAttribute('data-target-column-index');
+
+                datatable.column(targetColumnIndex).search(elVal).draw();
+            });
+        });
+
+        // Search with mouse up event like in ecommerce-products
+        $('#datatableSearch').on('mouseup', function (e) {
+            var $input = $(this),
+                oldValue = $input.val();
+
+            if (oldValue == "") return;
+
+            setTimeout(function(){
+                var newValue = $input.val();
+                if (newValue == ""){
+                    datatable.search('').draw();
+                }
+            }, 1);
+        });
+
+        // Column toggle functionality
+        $('#toggleColumn_participant').change(function (e) {
+            datatable.columns(1).visible(e.target.checked)
+        });
+
+        $('#toggleColumn_today').change(function (e) {
+            datatable.columns(2).visible(e.target.checked)
+        });
+
+        $('#toggleColumn_sessions').change(function (e) {
+            for(let i = 3; i < sessions.length + 3; i++) {
+                datatable.columns(i).visible(e.target.checked);
+            }
+        });
+
+        // Initialize TomSelect
+        HSCore.components.HSTomSelect.init('.js-select');
+    });
+
+    function getStatusBadge(status, isManual) {
+        if (isManual) {
+            return '<span class="badge bg-soft-primary text-primary">*</span>';
+        }
+        
+        switch (status) {
+            case 'on_time': 
+                return '<span class="badge bg-soft-success text-success">✓</span>';
+            case 'too_late': 
+                return '<span class="badge bg-soft-warning text-warning">!</span>';
+            case 'too_early': 
+                return '<span class="badge bg-soft-info text-info">~</span>';
+            case 'unknown': 
+                return '<span class="badge bg-soft-secondary text-secondary">?</span>';
+            default: 
+                return '<span class="text-muted">—</span>';
+        }
     }
-    participantsMap.get(a.participant_id).attendance[a.session_id] = a;
-  });
 
-  const sessions = Array.from(sessionsMap.entries()).sort((a, b) => new Date(a[1]) - new Date(b[1]));
-  const participants = Array.from(participantsMap.values());
-
-  const todayISO = new Date().toISOString().slice(0, 10);
-
-  // Шапка таблицы
-  const thead = document.getElementById("thead-row");
-
-  // Вставляем остальные сессии после "Сегодня"
-sessions.forEach(([session_id, date]) => {
-  const th = document.createElement("th");
-  const link = `{% url 'groups:session_qr_pdf' 99999 %}`.replace("99999", session_id);
-  th.innerHTML = `${formatDate(date)}<br><a href="${link}" target="_blank">QR</a>`;
-  thead.appendChild(th);
-});
-
-  // Тело таблицы
-  const tbody = document.getElementById("attendance-tbody");
-
-  participants.forEach((p, i) => {
-    const tr = document.createElement("tr");
-
-    const todaySession = sessions.find(([_, date]) => date === todayISO);
-    let todayCell = '<td>—</td>';
-    if (todaySession) {
-      const a = p.attendance[todaySession[0]];
-      if (a) {
-        todayCell = `<td class="text-start">
-          <div><strong>В:</strong> ${a.marked_entry ? '*' : statusIcon(a.arrived_status)} ${a.arrived_at || ''}</div>
-          <div><strong>У:</strong> ${a.marked_exit ? '*' : statusIcon(a.left_status)} ${a.left_at || ''}</div>
-        </td>`;
-      }
+    function formatDate(dateStr) {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
     }
 
-    // Собираем HTML строки
-tr.innerHTML = `<td>${i + 1}</td><td><a href="/groups/{{ group.id }}/manual-attendance/${p.id}/" target="_blank">${p.name}</a></td>${todayCell}` +
-      sessions.map(([id]) => {
-        const a = p.attendance[id];
-        if (!a) return `<td>—</td>`;
-        return `<td class="text-start">
-          <div><strong>В:</strong> ${a.marked_entry ? '*' : statusIcon(a.arrived_status)} ${a.arrived_at || ''}</div>
-          <div><strong>У:</strong> ${a.marked_exit ? '*' : statusIcon(a.left_status)} ${a.left_at || ''}</div>
-        </td>`;
-      }).join("");
+    function clearFilters() {
+        document.querySelectorAll('.js-datatable-filter').forEach(el => el.checked = false);
+        const datatable = HSCore.components.HSDatatables.getItem('datatable');
+        datatable.search('').columns().search('').draw();
+    }
 
-    tbody.appendChild(tr);
-  });
 
-  new DataTable('#attendance-table', {
-    language: {
-      url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
-    },
-    pageLength: 25,
-    lengthMenu: [10, 25, 50, 100],
-    responsive: true,
-    dom: 'Bfrtip',
-    buttons: ['excel', 'pdf', 'print'],
-    ordering: false
-  });
-});
+    </script>
 
-function statusIcon(status) {
-  switch (status) {
-    case 'on_time': return '✓';
-    case 'too_late': return '!';
-    case 'too_early': return '~';
-    case 'unknown': return '?';
-    default: return '-';
-  }
-}
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
-}
-</script>
 {% endblock %}

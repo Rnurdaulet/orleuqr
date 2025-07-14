@@ -1,107 +1,476 @@
 {% extends "base.html" %}
-{% load i18n groups_extras %}
+{% load i18n static groups_extras %}
+
+{% block title %}Мои группы и посещаемость - {{ block.super }}{% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h2 class="mb-4">Мои группы и посещаемость</h2>
+    <!-- Content -->
+    <div class="content container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="row align-items-center mb-3">
+                <div class="col-sm mb-2 mb-sm-0">
+                    <h1 class="page-header-title">Мои группы <span class="badge bg-soft-dark text-dark ms-2">{{ groups.count }}</span></h1>
+                    
+                    <div class="mt-2">
+                        <a class="text-body me-3" href="#" onclick="exportAllTables()">
+                            <i class="bi-download me-1"></i> Экспорт всех
+                        </a>
+                        <a class="text-body" href="#" onclick="printAllTables()">
+                            <i class="bi-printer me-1"></i> Печать всех
+                        </a>
+                    </div>
+                </div>
+                <!-- End Col -->
+
+                <div class="col-sm-auto">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary" onclick="printAllTables()">
+                            <i class="bi-printer me-1"></i> Печать всех
+                        </button>
+                        <a class="btn btn-primary" href="#" onclick="exportAllTables()">
+                            <i class="bi-download me-1"></i> Экспорт всех
+                        </a>
+                    </div>
+                </div>
+                <!-- End Col -->
+            </div>
+            <!-- End Row -->
+        </div>
+        <!-- End Page Header -->
 
         {% for group in groups %}
-            <h4 class="mt-4">{{ group.code }} — {{ group.course_name }}</h4>
-            <table class="table table-bordered table-striped table-sm attendance-table" style="width: 100%;">
-                <thead class="table-light">
-                <tr>
-                    <th>Дата</th>
-                    <th>Вход</th>
-                    <th>Статус входа</th>
-                    <th>Выход</th>
-                    <th>Статус выхода</th>
-                    <th>Доверие</th>
-                    <th>Баллы</th>
-                    <th>Отметка тренером</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for session in group.sessions.all %}
-                    {% with attendance=attendance_map|get_item:group.id|get_item:session.id %}
-                        <tr>
-                            <td>{{ session.date }}</td>
-                            <td>
-                                {% if attendance and attendance.arrived_at %}
-                                    {{ attendance.arrived_at|time:"H:i" }}
-                                {% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% if attendance %}{{ attendance.get_arrived_status_display }}{% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% if attendance and attendance.left_at %}
-                                    {{ attendance.left_at|time:"H:i" }}
-                                {% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% if attendance %}{{ attendance.get_left_status_display }}{% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% if attendance %}{{ attendance.get_trust_level_display }}{% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% if attendance %}{{ attendance.trust_score }}{% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% if attendance %}
-                                    {% if attendance.marked_entry_by_trainer or attendance.marked_exit_by_trainer %}
-                                        {% if attendance.marked_entry_by_trainer %}Вход{% endif %}
-                                        {% if attendance.marked_exit_by_trainer %}
-                                            {% if attendance.marked_entry_by_trainer %} / {% endif %}Выход
-                                        {% endif %}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
+            <!-- Card -->
+            <div class="card mb-4">
+                <!-- Header -->
+                <div class="card-header card-header-content-md-between">
+                    <div class="mb-2 mb-md-0">
+                        <h4 class="card-header-title">{{ group.code }} — {{ group.course_name }}</h4>
+                        <p class="card-subtitle">{{ group.start_date|date:"d.m.Y" }} — {{ group.end_date|date:"d.m.Y" }}</p>
+                    </div>
 
-                        </tr>
-                    {% endwith %}
-                {% endfor %}
-                </tbody>
-            </table>
+                    <div class="d-grid d-sm-flex gap-2">
+                        <button class="btn btn-white btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasGroupFilter{{ forloop.counter }}" aria-controls="offcanvasGroupFilter{{ forloop.counter }}">
+                            <i class="bi-filter me-1"></i> Фильтры
+                        </button>
+
+                        <!-- Dropdown -->
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-white btn-sm dropdown-toggle" id="attendanceDropdown{{ forloop.counter }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi-download me-1"></i> Экспорт
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="attendanceDropdown{{ forloop.counter }}">
+                                <a class="dropdown-item export-excel" href="#" data-table="attendance-table-{{ forloop.counter }}">
+                                    <i class="bi-file-earmark-excel dropdown-item-icon"></i> Excel
+                                </a>
+                                <a class="dropdown-item export-pdf" href="#" data-table="attendance-table-{{ forloop.counter }}">
+                                    <i class="bi-file-earmark-pdf dropdown-item-icon"></i> PDF
+                                </a>
+                                <a class="dropdown-item export-print" href="#" data-table="attendance-table-{{ forloop.counter }}">
+                                    <i class="bi-printer dropdown-item-icon"></i> Печать
+                                </a>
+                            </div>
+                        </div>
+                        <!-- End Dropdown -->
+                    </div>
+                </div>
+                <!-- End Header -->
+
+                <!-- Table -->
+                <div class="table-responsive datatable-custom">
+                    <table id="attendance-table-{{ forloop.counter }}" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table attendance-table" data-hs-datatables-options='{
+                             "pageLength": 15,
+                             "lengthMenu": [10, 15, 20, 25],
+                             "ordering": true,
+                             "searching": false,
+                             "paging": false,
+                             "info": false,
+                             "dom": "t"
+                           }'>
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Дата</th>
+                                <th>Вход</th>
+                                <th>Статус входа</th>
+                                <th>Выход</th>
+                                <th>Статус выхода</th>
+                                <th>Доверие</th>
+                                <th>Баллы</th>
+                                <th>Отметка тренером</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in group.sessions.all %}
+                                {% with attendance=attendance_map|get_item:group.id|get_item:session.id %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="text-body">{{ session.date|date:"d.m.Y" }}</span>
+                                                {% now "Y-m-d" as today_str %}
+                                                {% if session.date|stringformat:'Y-m-d' == today_str %}
+                                                    <span class="badge bg-soft-warning text-warning ms-2">Сегодня</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if attendance and attendance.arrived_at %}
+                                                <span class="text-body">{{ attendance.arrived_at|time:"H:i" }}</span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance %}
+                                                {% if attendance.arrived_status == 'on_time' %}
+                                                    <span class="badge bg-soft-success text-success">
+                                                        <i class="bi-check-circle me-1"></i>{{ attendance.get_arrived_status_display }}
+                                                    </span>
+                                                {% elif attendance.arrived_status == 'too_late' %}
+                                                    <span class="badge bg-soft-warning text-warning">
+                                                        <i class="bi-exclamation-circle me-1"></i>{{ attendance.get_arrived_status_display }}
+                                                    </span>
+                                                {% elif attendance.arrived_status == 'too_early' %}
+                                                    <span class="badge bg-soft-info text-info">
+                                                        <i class="bi-info-circle me-1"></i>{{ attendance.get_arrived_status_display }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-soft-secondary text-secondary">
+                                                        <i class="bi-question-circle me-1"></i>{{ attendance.get_arrived_status_display }}
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance and attendance.left_at %}
+                                                <span class="text-body">{{ attendance.left_at|time:"H:i" }}</span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance %}
+                                                {% if attendance.left_status == 'on_time' %}
+                                                    <span class="badge bg-soft-success text-success">
+                                                        <i class="bi-check-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                                    </span>
+                                                {% elif attendance.left_status == 'too_late' %}
+                                                    <span class="badge bg-soft-warning text-warning">
+                                                        <i class="bi-exclamation-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                                    </span>
+                                                {% elif attendance.left_status == 'too_early' %}
+                                                    <span class="badge bg-soft-info text-info">
+                                                        <i class="bi-info-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-soft-secondary text-secondary">
+                                                        <i class="bi-question-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance %}
+                                                {% if attendance.trust_level == 'high' %}
+                                                    <span class="badge bg-soft-success text-success">
+                                                        <i class="bi-shield-check me-1"></i>{{ attendance.get_trust_level_display }}
+                                                    </span>
+                                                {% elif attendance.trust_level == 'medium' %}
+                                                    <span class="badge bg-soft-warning text-warning">
+                                                        <i class="bi-shield me-1"></i>{{ attendance.get_trust_level_display }}
+                                                    </span>
+                                                {% elif attendance.trust_level == 'low' %}
+                                                    <span class="badge bg-soft-danger text-danger">
+                                                        <i class="bi-shield-x me-1"></i>{{ attendance.get_trust_level_display }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance %}
+                                                <span class="badge bg-soft-primary text-primary">{{ attendance.trust_score }}</span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance %}
+                                                {% if attendance.marked_entry_by_trainer or attendance.marked_exit_by_trainer %}
+                                                    <div class="d-flex flex-column gap-1">
+                                                        {% if attendance.marked_entry_by_trainer %}
+                                                            <span class="badge bg-soft-info text-info">
+                                                                <i class="bi-person-check me-1"></i>Вход
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if attendance.marked_exit_by_trainer %}
+                                                            <span class="badge bg-soft-info text-info">
+                                                                <i class="bi-person-check me-1"></i>Выход
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- End Table -->
+
+                <!-- Footer -->
+                <div class="card-footer">
+                    <div class="row justify-content-center justify-content-sm-between align-items-sm-center">
+                        <div class="col-sm mb-2 mb-sm-0">
+                            <div class="d-flex justify-content-center justify-content-sm-start align-items-center">
+                                <span class="me-2">Показано записей: <strong>{{ group.sessions.count }}</strong></span>
+                            </div>
+                        </div>
+                        <!-- End Col -->
+
+                        <div class="col-sm-auto">
+                            <div class="d-flex justify-content-center justify-content-sm-end">
+                                <small class="text-cap text-muted">{{ group.course_name }}</small>
+                            </div>
+                        </div>
+                        <!-- End Col -->
+                    </div>
+                    <!-- End Row -->
+                </div>
+                <!-- End Footer -->
+            </div>
+            <!-- End Card -->
+
+            <!-- Filter Offcanvas -->
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasGroupFilter{{ forloop.counter }}" aria-labelledby="offcanvasGroupFilterLabel{{ forloop.counter }}">
+                <div class="offcanvas-header">
+                    <h4 id="offcanvasGroupFilterLabel{{ forloop.counter }}" class="mb-0">Фильтры для {{ group.code }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <span class="text-cap small">Статус посещения</span>
+
+                    <div class="d-grid gap-2 mb-2">
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="statusFilter{{ forloop.counter }}" value="" id="statusFilterAll{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="2">
+                            <label class="form-check-label" for="statusFilterAll{{ forloop.counter }}">Все статусы</label>
+                        </div>
+                        <!-- End Form Check -->
+
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="statusFilter{{ forloop.counter }}" value="Вовремя" id="statusFilterOnTime{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="2">
+                            <label class="form-check-label" for="statusFilterOnTime{{ forloop.counter }}">Вовремя</label>
+                        </div>
+                        <!-- End Form Check -->
+
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="statusFilter{{ forloop.counter }}" value="Опоздал" id="statusFilterLate{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="2">
+                            <label class="form-check-label" for="statusFilterLate{{ forloop.counter }}">Опоздал</label>
+                        </div>
+                        <!-- End Form Check -->
+
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="statusFilter{{ forloop.counter }}" value="Рано" id="statusFilterEarly{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="2">
+                            <label class="form-check-label" for="statusFilterEarly{{ forloop.counter }}">Рано</label>
+                        </div>
+                        <!-- End Form Check -->
+                    </div>
+
+                    <a class="link mt-2" href="javascript:;" onclick="clearGroupFilters('{{ forloop.counter }}')">
+                        <i class="bi-x"></i> Очистить
+                    </a>
+
+                    <hr>
+
+                    <span class="text-cap small">Уровень доверия</span>
+
+                    <div class="d-grid gap-2 mb-2">
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="trustFilter{{ forloop.counter }}" value="" id="trustFilterAll{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="5">
+                            <label class="form-check-label" for="trustFilterAll{{ forloop.counter }}">Все уровни</label>
+                        </div>
+                        <!-- End Form Check -->
+
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="trustFilter{{ forloop.counter }}" value="Высокий" id="trustFilterHigh{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="5">
+                            <label class="form-check-label" for="trustFilterHigh{{ forloop.counter }}">Высокий</label>
+                        </div>
+                        <!-- End Form Check -->
+
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="trustFilter{{ forloop.counter }}" value="Средний" id="trustFilterMedium{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="5">
+                            <label class="form-check-label" for="trustFilterMedium{{ forloop.counter }}">Средний</label>
+                        </div>
+                        <!-- End Form Check -->
+
+                        <!-- Form Check -->
+                        <div class="form-check">
+                            <input class="form-check-input js-group-filter" type="radio" name="trustFilter{{ forloop.counter }}" value="Низкий" id="trustFilterLow{{ forloop.counter }}" data-table="attendance-table-{{ forloop.counter }}" data-column="5">
+                            <label class="form-check-label" for="trustFilterLow{{ forloop.counter }}">Низкий</label>
+                        </div>
+                        <!-- End Form Check -->
+                    </div>
+
+                    <a class="link mt-2" href="javascript:;" onclick="clearGroupFilters('{{ forloop.counter }}')">
+                        <i class="bi-x"></i> Очистить
+                    </a>
+                </div>
+                <!-- End Body -->
+
+                <!-- Footer -->
+                <div class="offcanvas-footer">
+                    <div class="row gx-2">
+                        <div class="col">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-white" onclick="clearGroupFilters('{{ forloop.counter }}')">Очистить все фильтры</button>
+                            </div>
+                        </div>
+                        <!-- End Col -->
+
+                        <div class="col">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="offcanvas">Применить</button>
+                            </div>
+                        </div>
+                        <!-- End Col -->
+                    </div>
+                    <!-- End Row -->
+                </div>
+                <!-- End Footer -->
+            </div>
+            <!-- End Filter Offcanvas -->
         {% endfor %}
     </div>
+    <!-- End Content -->
 {% endblock %}
 
 {% block extra_js %}
-    <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-colvis-3.2.3/b-html5-3.2.3/b-print-3.2.3/fh-4.0.2/r-3.0.4/sc-2.4.3/sl-3.0.1/datatables.min.css"
-          rel="stylesheet" integrity="sha384-IsX2Yjkl4qvL08/GCYmEttJn+HtfQ9SCC82Vb57D1A09fxW7nqJ3QDlWfwL+bOnn"
-          crossorigin="anonymous">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"
-            integrity="sha384-VFQrHzqBh5qiJIU0uGU5CIW3+OWpdGGJM9LBnGbuIH2mkICcFZ7lPd/AAtI7SNf7"
-            crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"
-            integrity="sha384-/RlQG9uf0M2vcTw3CX7fbqgbj/h8wKxw7C3zu9/GxcBPRKOEcESxaxufwRXqzq6n"
-            crossorigin="anonymous"></script>
-    <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/moment-2.29.4/jszip-3.10.1/dt-2.3.2/b-3.2.3/b-colvis-3.2.3/b-html5-3.2.3/b-print-3.2.3/fh-4.0.2/r-3.0.4/sc-2.4.3/sl-3.0.1/datatables.min.js"
-            integrity="sha384-VesFHokYMWwORy5UWp5SxaR+c6256+0/6pLOr/bXtdCPl3zxKDP1zeMbbryoMI7m"
-            crossorigin="anonymous"></script>
+    <!-- JS Implementing Plugins -->
+    <script src="{% static 'main/assets/vendor/datatables/media/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net.extensions/select/select.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/pdfmake/build/vfs_fonts.js' %}"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.attendance-table').forEach(table => {
-                new DataTable(table, {
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+    document.addEventListener('DOMContentLoaded', function () {
+        // Инициализация всех таблиц в стиле ecommerce-products
+        const dataTables = [];
+        document.querySelectorAll('.attendance-table').forEach((table, index) => {
+            const dt = HSCore.components.HSDatatables.init($(table), {
+                buttons: [
+                    {
+                        extend: 'excel',
+                        className: 'btn btn-white btn-sm d-none',
+                        title: table.closest('.card').querySelector('.card-header-title').textContent
                     },
-                    fixedHeader: true,
-                    responsive: true,
-                    paging: false,
-                    ordering: true,
-                    searching: false,
-                    dom: 'Bfrtip',
-                    buttons: [ 'excel', 'pdf', 'print']
-                });
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-white btn-sm d-none',
+                        title: table.closest('.card').querySelector('.card-header-title').textContent
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn btn-white btn-sm d-none',
+                        title: table.closest('.card').querySelector('.card-header-title').textContent
+                    }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json',
+                    zeroRecords: `<div class="text-center p-4">
+                        <img class="mb-3" src="{% static 'main/assets/svg/illustrations/oc-error.svg' %}" alt="Нет данных" style="width: 10rem;" data-hs-theme-appearance="default">
+                        <img class="mb-3" src="{% static 'main/assets/svg/illustrations-light/oc-error.svg' %}" alt="Нет данных" style="width: 10rem;" data-hs-theme-appearance="dark">
+                        <p class="mb-0">Нет данных для отображения</p>
+                    </div>`
+                }
+            });
+            dataTables.push(dt);
+        });
+
+        // Обработчики экспорта для отдельных таблиц
+        document.querySelectorAll('.export-excel').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tableId = this.getAttribute('data-table');
+                const table = document.getElementById(tableId);
+                const dt = $(table).DataTable();
+                dt.button(0).trigger();
             });
         });
+
+        document.querySelectorAll('.export-pdf').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tableId = this.getAttribute('data-table');
+                const table = document.getElementById(tableId);
+                const dt = $(table).DataTable();
+                dt.button(1).trigger();
+            });
+        });
+
+        document.querySelectorAll('.export-print').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tableId = this.getAttribute('data-table');
+                const table = document.getElementById(tableId);
+                const dt = $(table).DataTable();
+                dt.button(2).trigger();
+            });
+        });
+
+        // Фильтры для отдельных групп
+        document.querySelectorAll('.js-group-filter').forEach(function (item) {
+            item.addEventListener('change', function(e) {
+                var elVal = e.target.value,
+                    tableId = e.target.getAttribute('data-table'),
+                    columnIndex = e.target.getAttribute('data-column');
+
+                const table = document.getElementById(tableId);
+                const dt = $(table).DataTable();
+                dt.column(columnIndex).search(elVal).draw();
+            });
+        });
+
+        // Глобальные функции для экспорта всех таблиц
+        window.exportAllTables = function() {
+            dataTables.forEach(dt => {
+                dt.button(0).trigger(); // Excel export
+            });
+        };
+
+        window.printAllTables = function() {
+            window.print();
+        };
+
+        window.clearGroupFilters = function(groupIndex) {
+            document.querySelectorAll('[name="statusFilter' + groupIndex + '"], [name="trustFilter' + groupIndex + '"]').forEach(el => el.checked = false);
+            const tableId = 'attendance-table-' + groupIndex;
+            const table = document.getElementById(tableId);
+            const dt = $(table).DataTable();
+            dt.columns().search('').draw();
+        };
+    });
     </script>
 {% endblock %}

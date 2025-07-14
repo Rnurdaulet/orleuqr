@@ -1,37 +1,149 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
+
+{% block title %}Мои группы - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-4">Мои группы (как тренер)</h2>
-
-  {% if groups %}
-    <div class="row">
-      {% for group in groups %}
-        <div class="col-md-6 col-lg-4">
-          <div class="card mb-4 shadow-sm h-100">
-            <div class="card-header">
-              <strong>{{ group.code }}</strong>
+    <!-- Content -->
+    <div class="content container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="row align-items-end">
+                <div class="col-sm mb-2 mb-sm-0">
+                    <h1 class="page-header-title">Мои группы</h1>
+                    <p class="page-header-text">Управление учебными группами и мониторинг посещаемости</p>
+                </div>
+                <div class="col-sm-auto">
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-primary" href="#">
+                            <i class="bi-plus me-1"></i> Создать группу
+                        </a>
+                        <a class="btn btn-primary" href="#">
+                            <i class="bi-download me-1"></i> Экспорт
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-              <h5 class="card-title">{{ group.course_name }}</h5>
-              <p class="card-text">
-                Даты: {{ group.start_date }} — {{ group.end_date }}<br>
-                Участников: {{ group.participants.count }}<br>
-                Сессий: {{ group.sessions.count }}
-              </p>
-              <a href="{% url 'groups:group_detail' group.id %}" class="btn btn-sm btn-primary">
-                Посмотреть посещаемость
-              </a>
-            </div>
-          </div>
         </div>
-      {% endfor %}
+        <!-- End Page Header -->
+
+        {% if groups %}
+            <div class="row">
+                {% for group in groups %}
+                    <div class="col-sm-6 col-lg-4 mb-3 mb-lg-5">
+                        <!-- Card -->
+                        <div class="card card-hover-shadow h-100">
+                            <div class="card-header border-bottom">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <h4 class="card-header-title">{{ group.code }}</h4>
+                                    </div>
+                                    <div class="col-auto">
+                                        <!-- Dropdown -->
+                                        <div class="dropdown">
+                                            <button type="button" class="btn btn-ghost-secondary btn-icon btn-sm rounded-circle" id="projectsGridDropdown{{ forloop.counter }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi-three-dots-vertical"></i>
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="projectsGridDropdown{{ forloop.counter }}">
+                                                <a class="dropdown-item" href="{% url 'groups:group_detail' group.id %}">
+                                                    <i class="bi-eye dropdown-item-icon"></i> Посмотреть
+                                                </a>
+                                                <a class="dropdown-item" href="#">
+                                                    <i class="bi-pencil dropdown-item-icon"></i> Редактировать
+                                                </a>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item text-danger" href="#">
+                                                    <i class="bi-trash dropdown-item-icon"></i> Удалить
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <!-- End Dropdown -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <h5 class="card-title text-inherit">{{ group.course_name }}</h5>
+                                
+                                <!-- Stats -->
+                                <ul class="list-group list-group-flush list-group-no-gutters">
+                                    <li class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <span class="card-subtitle">Период:</span>
+                                            </div>
+                                            <div class="col-auto">
+                                                <span class="badge bg-soft-secondary text-body">
+                                                    {{ group.start_date|date:"d.m" }} — {{ group.end_date|date:"d.m.Y" }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <span class="card-subtitle">Участников:</span>
+                                            </div>
+                                            <div class="col-auto">
+                                                <span class="badge bg-soft-primary text-primary">
+                                                    <i class="bi-people me-1"></i>{{ group.participants.count }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <span class="card-subtitle">Занятий:</span>
+                                            </div>
+                                            <div class="col-auto">
+                                                <span class="badge bg-soft-success text-success">
+                                                    <i class="bi-calendar-event me-1"></i>{{ group.sessions.count }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                                <!-- End Stats -->
+                            </div>
+                            
+                            <div class="card-footer">
+                                <div class="row justify-content-between align-items-center">
+                                    <div class="col">
+                                        <span class="card-subtitle">Статус:</span>
+                                        <span class="badge bg-soft-success text-success ms-1">Активная</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a class="btn btn-primary btn-sm" href="{% url 'groups:group_detail' group.id %}">
+                                            Просмотр <i class="bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- End Card -->
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- No groups state -->
+            <div class="text-center">
+                <img class="img-fluid mb-3" src="{% static 'main/assets/svg/illustrations/oc-error.svg' %}" alt="Нет групп" style="max-width: 15rem;" data-hs-theme-appearance="default">
+                <img class="img-fluid mb-3" src="{% static 'main/assets/svg/illustrations-light/oc-error.svg' %}" alt="Нет групп" style="max-width: 15rem;" data-hs-theme-appearance="dark">
+                
+                <div class="row justify-content-sm-center">
+                    <div class="col-sm-7 col-md-5">
+                        <h4>У вас пока нет активных групп</h4>
+                        <p>Создайте свою первую группу или обратитесь к администратору для получения доступа.</p>
+                        <a class="btn btn-primary" href="#">
+                            <i class="bi-plus me-1"></i> Создать группу
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- End No groups state -->
+        {% endif %}
     </div>
-  {% else %}
-    <div class="alert alert-info">
-      У вас пока нет активных групп.
-    </div>
-  {% endif %}
-</div>
+    <!-- End Content -->
 {% endblock %}

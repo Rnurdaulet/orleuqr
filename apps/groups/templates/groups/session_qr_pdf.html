@@ -1,72 +1,423 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}PDF и SVG QR-коды{% endblock %}
+
+{% block title %}QR-коды - {{ session.group.code }} - {{ session.date }} - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-  <h2>QR-коды для сессии {{ session.group.code }} — {{ session.date }}</h2>
+    <!-- Content -->
+    <div class="content container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="row align-items-center mb-3">
+                <div class="col-sm mb-2 mb-sm-0">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb breadcrumb-no-gutter">
+                            <li class="breadcrumb-item"><a class="breadcrumb-link" href="{% url 'groups:trainer_groups' %}">Мои группы</a></li>
+                            <li class="breadcrumb-item"><a class="breadcrumb-link" href="{% url 'groups:group_detail' session.group.id %}">{{ session.group.code }}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">QR-коды</li>
+                        </ol>
+                    </nav>
+                    <h1 class="page-header-title">QR-коды для сессии <span class="badge bg-soft-dark text-dark ms-2">{{ session.date|date:"d.m.Y" }}</span></h1>
+                    
+                    <div class="mt-2">
+                        <a class="text-body me-3" href="#" onclick="downloadAllQR()">
+                            <i class="bi-download me-1"></i> Скачать все QR
+                        </a>
+                        <a class="text-body" href="#" onclick="printQRCodes()">
+                            <i class="bi-printer me-1"></i> Печать QR
+                        </a>
+                    </div>
+                </div>
+                <!-- End Col -->
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-
-  <!-- Tabs nav -->
-  <ul class="nav nav-tabs mb-3" id="qrTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="entry-tab" data-bs-toggle="tab" data-bs-target="#entry" type="button" role="tab" aria-controls="entry" aria-selected="true">Вход</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="exit-tab" data-bs-toggle="tab" data-bs-target="#exit" type="button" role="tab" aria-controls="exit" aria-selected="false">Выход</button>
-    </li>
-  </ul>
-
-  <!-- Tabs content -->
-  <div class="tab-content" id="qrTabContent">
-    <!-- ENTRY -->
-    <div class="tab-pane fade show active" id="entry" role="tabpanel" aria-labelledby="entry-tab">
-      <div class="card">
-        <div class="card-body text-center">
-          {% if session.qr_file_entry %}
-            <img src="{{ session.qr_file_entry.url }}" alt="SVG QR входа"
-                 style="width: auto; height: 300px ;" class="mb-3">
-          {% else %}
-            <p class="text-muted">PDF и SVG ещё не сгенерированы.</p>
-          {% endif %}
-
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="mode" value="entry">
-            <button type="submit" class="btn btn-primary">
-              Сгенерировать PDF (вход)
-            </button>
-          </form>
+                <div class="col-sm-auto">
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-primary" href="{% url 'groups:group_detail' session.group.id %}">
+                            <i class="bi-arrow-left me-1"></i> Назад к группе
+                        </a>
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-primary dropdown-toggle" id="qrActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi-gear me-1"></i> Действия
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="qrActionsDropdown">
+                                <a class="dropdown-item" href="#" onclick="printQRCodes()">
+                                    <i class="bi-printer dropdown-item-icon"></i> Печать QR-кодов
+                                </a>
+                                <a class="dropdown-item" href="#" onclick="downloadAllQR()">
+                                    <i class="bi-download dropdown-item-icon"></i> Скачать все
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" onclick="regenerateAllQR()">
+                                    <i class="bi-arrow-clockwise dropdown-item-icon"></i> Перегенерировать все
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Col -->
+            </div>
+            <!-- End Row -->
         </div>
-      </div>
-    </div>
+        <!-- End Page Header -->
 
-    <!-- EXIT -->
-    <div class="tab-pane fade" id="exit" role="tabpanel" aria-labelledby="exit-tab">
-      <div class="card">
-        <div class="card-body text-center">
-          {% if session.qr_file_exit %}
-            <img src="{{ session.qr_file_exit.url }}" alt="SVG QR выхода"
-                 style="width: auto; height: 300px ;" class="mb-3">
-          {% else %}
-            <p class="text-muted">PDF и SVG ещё не сгенерированы.</p>
-          {% endif %}
+        <!-- Messages -->
+        {% if messages %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        <!-- End Messages -->
 
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="mode" value="exit">
-            <button type="submit" class="btn btn-primary">
-              Сгенерировать PDF (выход)
-            </button>
-          </form>
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="avatar avatar-lg avatar-4x3 avatar-soft-primary">
+                                    <span class="avatar-initials"><i class="bi-calendar-date"></i></span>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <span class="d-block h6 text-cap">Дата сессии</span>
+                                <span class="d-block h4 mb-0">{{ session.date|date:"d.m.Y" }}</span>
+                                <span class="d-block text-muted">{{ session.date|date:"l" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="avatar avatar-lg avatar-4x3 avatar-soft-success">
+                                    <span class="avatar-initials"><i class="bi-people"></i></span>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <span class="d-block h6 text-cap">Участников в группе</span>
+                                <span class="d-block h4 mb-0">{{ session.group.participants.count }}</span>
+                                <span class="d-block text-muted">Ожидают отметки</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+        <!-- End Stats Cards -->
+
+        <!-- QR Codes Nav -->
+        <div class="js-nav-scroller hs-nav-scroller-horizontal mb-3">
+            <span class="hs-nav-scroller-arrow-prev" style="display: none;">
+                <a class="hs-nav-scroller-arrow-prev-btn">
+                    <i class="bi-chevron-left"></i>
+                </a>
+            </span>
+            <span class="hs-nav-scroller-arrow-next" style="display: none;">
+                <a class="hs-nav-scroller-arrow-next-btn">
+                    <i class="bi-chevron-right"></i>
+                </a>
+            </span>
+
+            <ul class="nav nav-tabs align-items-center" id="qrTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="entry-tab" data-bs-toggle="tab" data-bs-target="#entry" type="button" role="tab" aria-controls="entry" aria-selected="true">
+                        <i class="bi-box-arrow-in-right me-2"></i>Вход
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="exit-tab" data-bs-toggle="tab" data-bs-target="#exit" type="button" role="tab" aria-controls="exit" aria-selected="false">
+                        <i class="bi-box-arrow-right me-2"></i>Выход
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <!-- End QR Codes Nav -->
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="qrTabContent">
+            <!-- Entry Tab -->
+            <div class="tab-pane fade show active" id="entry" role="tabpanel" aria-labelledby="entry-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h4 class="card-header-title">
+                                    <i class="bi-box-arrow-in-right me-2"></i>QR-код для входа
+                                </h4>
+                                <p class="card-header-text">Отметка прихода участников на занятие</p>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex gap-2">
+                                    {% if session.qr_file_entry %}
+                                        <a class="btn btn-outline-primary btn-sm" href="{{ session.qr_file_entry.url }}" download>
+                                            <i class="bi-download me-1"></i> Скачать SVG
+                                        </a>
+                                    {% endif %}
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="mode" value="entry">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            {% if session.qr_file_entry %}
+                                                <i class="bi-arrow-clockwise me-1"></i> Перегенерировать
+                                            {% else %}
+                                                <i class="bi-plus me-1"></i> Сгенерировать
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body text-center">
+                        {% if session.qr_file_entry %}
+                            <div class="mb-4">
+                                <img src="{{ session.qr_file_entry.url }}" alt="QR-код для входа" 
+                                     style="max-width: 100%; height: auto; max-height: 400px;" 
+                                     class="img-fluid rounded">
+                            </div>
+                            
+                            <div class="row justify-content-center">
+                                <div class="col-sm-8 col-md-6">
+                                    <div class="alert alert-soft-success" role="alert">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi-check-circle"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-2">
+                                                <strong>QR-код готов!</strong><br>
+                                                Участники могут сканировать его для отметки входа.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <img class="img-fluid mb-3" src="{% static 'main/assets/svg/illustrations/oc-error.svg' %}" alt="QR-код не создан" style="max-width: 10rem;" data-hs-theme-appearance="default">
+                                <img class="img-fluid mb-3" src="{% static 'main/assets/svg/illustrations-light/oc-error.svg' %}" alt="QR-код не создан" style="max-width: 10rem;" data-hs-theme-appearance="dark">
+                                
+                                <div class="row justify-content-center">
+                                    <div class="col-sm-7 col-md-5">
+                                        <h4>QR-код не создан</h4>
+                                        <p class="text-muted">Нажмите кнопку "Сгенерировать" для создания QR-кода входа.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- End Entry Tab -->
+
+            <!-- Exit Tab -->
+            <div class="tab-pane fade" id="exit" role="tabpanel" aria-labelledby="exit-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h4 class="card-header-title">
+                                    <i class="bi-box-arrow-right me-2"></i>QR-код для выхода
+                                </h4>
+                                <p class="card-header-text">Отметка ухода участников с занятия</p>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex gap-2">
+                                    {% if session.qr_file_exit %}
+                                        <a class="btn btn-outline-primary btn-sm" href="{{ session.qr_file_exit.url }}" download>
+                                            <i class="bi-download me-1"></i> Скачать SVG
+                                        </a>
+                                    {% endif %}
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="mode" value="exit">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            {% if session.qr_file_exit %}
+                                                <i class="bi-arrow-clockwise me-1"></i> Перегенерировать
+                                            {% else %}
+                                                <i class="bi-plus me-1"></i> Сгенерировать
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body text-center">
+                        {% if session.qr_file_exit %}
+                            <div class="mb-4">
+                                <img src="{{ session.qr_file_exit.url }}" alt="QR-код для выхода" 
+                                     style="max-width: 100%; height: auto; max-height: 400px;" 
+                                     class="img-fluid rounded">
+                            </div>
+                            
+                            <div class="row justify-content-center">
+                                <div class="col-sm-8 col-md-6">
+                                    <div class="alert alert-soft-danger" role="alert">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi-check-circle"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-2">
+                                                <strong>QR-код готов!</strong><br>
+                                                Участники могут сканировать его для отметки выхода.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <img class="img-fluid mb-3" src="{% static 'main/assets/svg/illustrations/oc-error.svg' %}" alt="QR-код не создан" style="max-width: 10rem;" data-hs-theme-appearance="default">
+                                <img class="img-fluid mb-3" src="{% static 'main/assets/svg/illustrations-light/oc-error.svg' %}" alt="QR-код не создан" style="max-width: 10rem;" data-hs-theme-appearance="dark">
+                                
+                                <div class="row justify-content-center">
+                                    <div class="col-sm-7 col-md-5">
+                                        <h4>QR-код не создан</h4>
+                                        <p class="text-muted">Нажмите кнопку "Сгенерировать" для создания QR-кода выхода.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- End Exit Tab -->
+        </div>
+        <!-- End Tab Content -->
+
+        <!-- Instructions Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4 class="card-header-title">
+                    <i class="bi-info-circle me-2"></i>Инструкция по использованию
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Для тренеров:</h6>
+                        <ul class="list-py-2">
+                            <li>Сгенерируйте QR-коды для входа и выхода</li>
+                            <li>Покажите QR-код участникам в начале/конце занятия</li>
+                            <li>Следите за отметками в реальном времени</li>
+                            <li>При необходимости отмечайте участников вручную</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Для участников:</h6>
+                        <ul class="list-py-2">
+                            <li>Откройте камеру на своем телефоне</li>
+                            <li>Наведите на QR-код</li>
+                            <li>Перейдите по ссылке для отметки</li>
+                            <li>Подтвердите свое присутствие</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Instructions Card -->
     </div>
-  </div>
-</div>
+    <!-- End Content -->
+{% endblock %}
+
+{% block extra_js %}
+    <!-- JS Implementing Plugins -->
+    <script src="{% static 'main/assets/vendor/hs-nav-scroller/dist/hs-nav-scroller.min.js' %}"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize nav scroller
+        new HSNavScroller('.js-nav-scroller');
+
+        // Utility functions
+        window.printQRCodes = function() {
+            const printContent = document.getElementById('qrTabContent');
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>QR-коды - {{ session.group.code }} - {{ session.date }}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            .qr-section { page-break-after: always; text-align: center; }
+                            .qr-section:last-child { page-break-after: avoid; }
+                            img { max-width: 100%; height: auto; }
+                            h2 { margin-bottom: 10px; }
+                            .details { margin-bottom: 30px; color: #666; }
+                        </style>
+                    </head>
+                    <body>
+                        {% if session.qr_file_entry %}
+                        <div class="qr-section">
+                            <h2>QR-код для входа</h2>
+                            <div class="details">{{ session.group.code }} — {{ session.date|date:"d.m.Y" }}</div>
+                            <img src="{{ session.qr_file_entry.url }}" alt="QR-код для входа">
+                        </div>
+                        {% endif %}
+                        {% if session.qr_file_exit %}
+                        <div class="qr-section">
+                            <h2>QR-код для выхода</h2>
+                            <div class="details">{{ session.group.code }} — {{ session.date|date:"d.m.Y" }}</div>
+                            <img src="{{ session.qr_file_exit.url }}" alt="QR-код для выхода">
+                        </div>
+                        {% endif %}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        };
+
+        window.downloadAllQR = function() {
+            {% if session.qr_file_entry %}
+                downloadFile('{{ session.qr_file_entry.url }}', 'qr-entry-{{ session.date|date:"Y-m-d" }}.svg');
+            {% endif %}
+            {% if session.qr_file_exit %}
+                setTimeout(() => {
+                    downloadFile('{{ session.qr_file_exit.url }}', 'qr-exit-{{ session.date|date:"Y-m-d" }}.svg');
+                }, 1000);
+            {% endif %}
+        };
+
+        window.regenerateAllQR = function() {
+            if (confirm('Вы уверены, что хотите перегенерировать все QR-коды? Старые коды станут недействительными.')) {
+                // Submit both forms
+                const forms = document.querySelectorAll('form[method="post"]');
+                if (forms.length > 0) {
+                    forms[0].submit();
+                }
+            }
+        };
+
+        function downloadFile(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Auto-refresh QR status every 30 seconds
+        setInterval(() => {
+            // Check if page is still active
+            if (!document.hidden) {
+                location.reload();
+            }
+        }, 30000);
+    });
+    </script>
 {% endblock %}

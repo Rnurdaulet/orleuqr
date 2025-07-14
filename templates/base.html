@@ -3,72 +3,345 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Система учета посещений{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'theme/css/theme.min.css' %}">
-    <link rel="stylesheet" href="{% static 'theme/css/vendor.min.css' %}">
-    <link rel="stylesheet" href="{% static 'theme/css/bootstrap-icons.css' %}">
-    <style>
-        .navbar-brand {
-            font-weight: bold;
+    <!-- Required Meta Tags Always Come First -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <!-- Title -->
+    <title>{% block title %}Система учета посещений | ОРЛЕУ{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'main/favicon.ico' %}">
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- CSS Implementing Plugins -->
+    <link rel="stylesheet" href="{% static 'main/assets/vendor/bootstrap-icons/font/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'main/assets/vendor/tom-select/dist/css/tom-select.bootstrap5.css' %}">
+    
+    <!-- CSS Front Template -->
+    <link rel="preload" href="{% static 'main/assets/css/theme.min.css' %}" data-hs-appearance="default" as="style">
+    <link rel="preload" href="{% static 'main/assets/css/theme-dark.min.css' %}" data-hs-appearance="dark" as="style">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    
+    <style data-hs-appearance-onload-styles>
+        * {
+            transition: unset !important;
         }
-
-        .card {
-            transition: transform 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
+        body {
+            opacity: 0;
         }
     </style>
+    
+    <script>
+        window.hs_config = {
+            "autopath": "@@autopath",
+            "deleteLine": "hs-builder:delete",
+            "deleteLine:build": "hs-builder:build-delete",
+            "deleteLine:dist": "hs-builder:dist-delete",
+            "previewMode": false,
+            "startPath": "/index.html",
+            "vars": {
+                "themeFont": "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap",
+                "version": "?v=1.0"
+            },
+            "layoutBuilder": {
+                "extend": {"switcherSupport": true},
+                "header": {"layoutMode": "default", "containerMode": "container-fluid"},
+                "sidebarLayout": "default"
+            },
+            "themeAppearance": {
+                "layoutSkin": "default",
+                "sidebarSkin": "default",
+                "styles": {
+                    "colors": {
+                        "primary": "#377dff",
+                        "transparent": "transparent",
+                        "white": "#fff",
+                        "dark": "132144",
+                        "gray": {"100": "#f9fafc", "900": "#1e2022"}
+                    },
+                    "font": "Inter"
+                }
+            },
+            "languageDirection": {"lang": "ru"}
+        };
+    </script>
+    
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" href="/">Система учета посещений</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                {% if user_profile %}
-                    <li class="nav-item">
-        <span class="nav-link">
-            <i class="bi bi-person-circle"></i> {{ user_profile.full_name }} ({{ user_profile.get_role_display }})
-        </span>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/accounts/logout/">
-                            <i class="bi bi-box-arrow-right"></i> Выход
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/accounts/login/">
-                            <i class="bi bi-box-arrow-in-right"></i> Вход
-                        </a>
-                    </li>
-                {% endif %}
 
-            </ul>
+<body class="has-navbar-vertical-aside navbar-vertical-aside-show-xl footer-offset">
+    <script src="{% static 'main/assets/js/hs.theme-appearance.js' %}"></script>
+
+    <!-- ========== HEADER ========== -->
+    <header id="header" class="navbar navbar-expand-lg navbar-fixed navbar-height navbar-container navbar-bordered bg-white">
+        <div class="navbar-nav-wrap">
+            <!-- Logo -->
+            <a class="navbar-brand" href="/" aria-label="ОРЛЕУ">
+                <img class="navbar-brand-logo" src="{% static 'main/assets/svg/logos/logo.svg' %}" alt="Logo" data-hs-theme-appearance="default">
+                <img class="navbar-brand-logo" src="{% static 'main/assets/svg/logos-light/logo.svg' %}" alt="Logo" data-hs-theme-appearance="dark">
+                <img class="navbar-brand-logo-mini" src="{% static 'main/assets/svg/logos/logo-short.svg' %}" alt="Logo" data-hs-theme-appearance="default">
+                <img class="navbar-brand-logo-mini" src="{% static 'main/assets/svg/logos-light/logo-short.svg' %}" alt="Logo" data-hs-theme-appearance="dark">
+            </a>
+            <!-- End Logo -->
+
+            <div class="navbar-nav-wrap-content-start">
+                <!-- Navbar Vertical Toggle -->
+                <button type="button" class="js-navbar-vertical-aside-toggle-invoker navbar-aside-toggler">
+                    <i class="bi-arrow-bar-left navbar-toggler-short-align" data-bs-template='<div class="tooltip d-none d-md-block" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>' data-bs-toggle="tooltip" data-bs-placement="right" title="Свернуть"></i>
+                    <i class="bi-arrow-bar-right navbar-toggler-full-align" data-bs-template='<div class="tooltip d-none d-md-block" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>' data-bs-toggle="tooltip" data-bs-placement="right" title="Развернуть"></i>
+                </button>
+                <!-- End Navbar Vertical Toggle -->
+            </div>
+
+            <div class="navbar-nav-wrap-content-end">
+                <!-- Navbar -->
+                <ul class="navbar-nav">
+                    {% if user_profile %}
+                        <li class="nav-item">
+                            <!-- Style Switcher -->
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-ghost-secondary btn-icon rounded-circle" id="selectThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-dropdown-animation>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end navbar-dropdown-menu navbar-dropdown-menu-borderless" aria-labelledby="selectThemeDropdown">
+                                    <a class="dropdown-item" href="#" data-icon="bi-moon-stars" data-value="auto">
+                                        <i class="bi-moon-stars me-2"></i>
+                                        <span class="text-truncate" title="Авто (системная)">Авто (системная)</span>
+                                    </a>
+                                    <a class="dropdown-item" href="#" data-icon="bi-brightness-high" data-value="default">
+                                        <i class="bi-brightness-high me-2"></i>
+                                        <span class="text-truncate" title="Светлая тема">Светлая тема</span>
+                                    </a>
+                                    <a class="dropdown-item active" href="#" data-icon="bi-moon" data-value="dark">
+                                        <i class="bi-moon me-2"></i>
+                                        <span class="text-truncate" title="Темная тема">Темная тема</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <!-- End Style Switcher -->
+                        </li>
+                        
+                        <li class="nav-item">
+                            <!-- Account -->
+                            <div class="dropdown">
+                                <a class="navbar-dropdown-account-wrapper" href="javascript:;" id="accountNavbarDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside" data-bs-dropdown-animation>
+                                    <div class="avatar avatar-sm avatar-circle">
+                                        <span class="avatar-initials">{{ user_profile.full_name|slice:":1"|upper }}</span>
+                                        <span class="avatar-status avatar-sm-status avatar-status-success"></span>
+                                    </div>
+                                </a>
+
+                                <div class="dropdown-menu dropdown-menu-end navbar-dropdown-menu navbar-dropdown-menu-borderless navbar-dropdown-account" aria-labelledby="accountNavbarDropdown" style="width: 16rem;">
+                                    <div class="dropdown-item-text">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar avatar-sm avatar-circle">
+                                                <span class="avatar-initials">{{ user_profile.full_name|slice:":1"|upper }}</span>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h5 class="mb-0">{{ user_profile.full_name }}</h5>
+                                                <p class="card-text text-body">{{ user_profile.email }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="dropdown-divider"></div>
+
+                                    <a class="dropdown-item" href="#">
+                                        <span class="dropdown-item-icon">
+                                            <i class="bi-person"></i>
+                                        </span>
+                                        Профиль
+                                    </a>
+                                    <a class="dropdown-item" href="#">
+                                        <span class="dropdown-item-icon">
+                                            <i class="bi-gear"></i>
+                                        </span>
+                                        Настройки
+                                    </a>
+
+                                    <div class="dropdown-divider"></div>
+
+                                    <a class="dropdown-item" href="/accounts/logout/">
+                                        <span class="dropdown-item-icon">
+                                            <i class="bi-box-arrow-right"></i>
+                                        </span>
+                                        Выход
+                                    </a>
+                                </div>
+                            </div>
+                            <!-- End Account -->
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-primary navbar-btn" href="/accounts/login/">
+                                <i class="bi-box-arrow-in-right me-1"></i> Вход
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <!-- End Navbar -->
+            </div>
+        </div>
+    </header>
+    <!-- ========== END HEADER ========== -->
+
+    {% if user_profile %}
+    <!-- ========== SIDEBAR ========== -->
+    <aside class="js-navbar-vertical-aside navbar navbar-vertical-aside navbar-vertical navbar-vertical-fixed navbar-expand-xl navbar-bordered bg-white">
+        <div class="navbar-vertical-container">
+            <div class="navbar-vertical-footer-offset">
+                <!-- Logo -->
+                <a class="navbar-brand" href="/" aria-label="ОРЛЕУ">
+                    <img class="navbar-brand-logo" src="{% static 'main/assets/svg/logos/logo.svg' %}" alt="Logo" data-hs-theme-appearance="default">
+                    <img class="navbar-brand-logo" src="{% static 'main/assets/svg/logos-light/logo.svg' %}" alt="Logo" data-hs-theme-appearance="dark">
+                    <img class="navbar-brand-logo-mini" src="{% static 'main/assets/svg/logos/logo-short.svg' %}" alt="Logo" data-hs-theme-appearance="default">
+                    <img class="navbar-brand-logo-mini" src="{% static 'main/assets/svg/logos-light/logo-short.svg' %}" alt="Logo" data-hs-theme-appearance="dark">
+                </a>
+                <!-- End Logo -->
+
+                <!-- Content -->
+                <div class="navbar-vertical-content">
+                    <div id="navbarVerticalMenu" class="nav nav-pills nav-vertical card-navbar-nav">
+                        <div class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="bi-house-door nav-icon"></i>
+                                <span class="nav-link-title">Главная</span>
+                            </a>
+                        </div>
+
+                        {% if user_profile.role == 'participant' %}
+                            <div class="nav-item">
+                                <a class="nav-link" href="/qr/scan/">
+                                    <i class="bi-qr-code-scan nav-icon"></i>
+                                    <span class="nav-link-title">Сканировать QR</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="{% url 'groups:my_groups' %}">
+                                    <i class="bi-journal-text nav-icon"></i>
+                                    <span class="nav-link-title">Мой журнал</span>
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="nav-item">
+                                <a class="nav-link" href="{% url 'groups:trainer_groups' %}">
+                                    <i class="bi-people-fill nav-icon"></i>
+                                    <span class="nav-link-title">Мои группы</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="/qr/scan/">
+                                    <i class="bi-qr-code-scan nav-icon"></i>
+                                    <span class="nav-link-title">Сканировать QR</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a class="nav-link" href="#">
+                                    <i class="bi-graph-up nav-icon"></i>
+                                    <span class="nav-link-title">Статистика</span>
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- End Content -->
+            </div>
+        </div>
+    </aside>
+    <!-- ========== END SIDEBAR ========== -->
+    {% endif %}
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main id="content" role="main" class="main{% if not user_profile %} main-center{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+    <!-- ========== END MAIN CONTENT ========== -->
+
+    <!-- ========== FOOTER ========== -->
+    <div class="footer">
+        <div class="row justify-content-between align-items-center">
+            <div class="col">
+                <p class="fs-6 mb-0">&copy; {% now "Y" %} Система учета посещений ОРЛЕУ. Все права защищены.</p>
+            </div>
+            <div class="col-auto">
+                <div class="d-flex justify-content-end">
+                    <ul class="list-inline list-separator">
+                        <li class="list-inline-item">
+                            <a class="list-separator-link" href="#">О системе</a>
+                        </li>
+                        <li class="list-inline-item">
+                            <a class="list-separator-link" href="#">Поддержка</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
-</nav>
+    <!-- ========== END FOOTER ========== -->
 
-<main class="container py-4">
-    {% block content %}{% endblock %}
-</main>
+    <!-- JS Global Compulsory -->
+    <script src="{% static 'main/assets/vendor/jquery/dist/jquery.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/jquery-migrate/dist/jquery-migrate.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
 
-<footer class="footer mt-auto py-3 bg-light">
-    <div class="container text-center">
-        <span class="text-muted">© {% now "Y" %} Система учета посещений</span>
-    </div>
-</footer>
+    <!-- JS Implementing Plugins -->
+    <script src="{% static 'main/assets/vendor/tom-select/dist/js/tom-select.complete.min.js' %}"></script>
+    {% if user_profile %}
+    <script src="{% static 'main/assets/vendor/hs-navbar-vertical-aside/dist/hs-navbar-vertical-aside.min.js' %}"></script>
+    {% endif %}
 
-<script src="{% static 'theme/js/vendor.min.js' %}"></script>
-<script src="{% static 'theme/js/vendor.min.js' %}"></script>
-{% block extra_js %}{% endblock %}
+    <!-- JS Front -->
+    <script src="{% static 'main/assets/js/theme.min.js' %}"></script>
+
+    <!-- JS Plugins Init. -->
+    <script>
+        (function() {
+            window.onload = function () {
+                {% if user_profile %}
+                // INITIALIZATION OF NAVBAR VERTICAL ASIDE
+                new HSSideNav('.js-navbar-vertical-aside').init()
+                {% endif %}
+
+                // INITIALIZATION OF BOOTSTRAP DROPDOWN
+                HSBsDropdown.init()
+            }
+        })()
+    </script>
+
+    <!-- Style Switcher JS -->
+    <script>
+        (function () {
+            // STYLE SWITCHER
+            const $dropdownBtn = document.getElementById('selectThemeDropdown')
+            const $variants = document.querySelectorAll(`[aria-labelledby="selectThemeDropdown"] [data-icon]`)
+
+            const setActiveStyle = function () {
+                $variants.forEach($item => {
+                    if ($item.getAttribute('data-value') === HSThemeAppearance.getOriginalAppearance()) {
+                        $dropdownBtn.innerHTML = `<i class="${$item.getAttribute('data-icon')}" />`
+                        return $item.classList.add('active')
+                    }
+                    $item.classList.remove('active')
+                })
+            }
+
+            $variants.forEach(function ($item) {
+                $item.addEventListener('click', function () {
+                    HSThemeAppearance.setAppearance($item.getAttribute('data-value'))
+                })
+            })
+
+            setActiveStyle()
+            window.addEventListener('on-hs-appearance-change', function () {
+                setActiveStyle()
+            })
+        })()
+    </script>
+
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
