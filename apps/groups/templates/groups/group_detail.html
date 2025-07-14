@@ -82,54 +82,9 @@
                         <i class="bi-filter me-1"></i> Фильтры
                     </button>
 
-                    <!-- Dropdown -->
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-white w-100" id="showHideDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                            <i class="bi-table me-1"></i> Колонки <span class="badge bg-soft-dark text-dark rounded-circle ms-1">4</span>
-                        </button>
-
-                        <div class="dropdown-menu dropdown-menu-end dropdown-card" aria-labelledby="showHideDropdown" style="width: 15rem;">
-                            <div class="card card-sm">
-                                <div class="card-body">
-                                    <div class="d-grid gap-3">
-                                        <!-- Form Switch -->
-                                        <label class="row form-check form-switch" for="toggleColumn_participant">
-                                            <span class="col-8 col-sm-9 ms-0">
-                                                <span class="me-2">Участник</span>
-                                            </span>
-                                            <span class="col-4 col-sm-3 text-end">
-                                                <input type="checkbox" class="form-check-input" id="toggleColumn_participant" checked>
-                                            </span>
-                                        </label>
-                                        <!-- End Form Switch -->
-
-                                        <!-- Form Switch -->
-                                        <label class="row form-check form-switch" for="toggleColumn_today">
-                                            <span class="col-8 col-sm-9 ms-0">
-                                                <span class="me-2">Сегодня</span>
-                                            </span>
-                                            <span class="col-4 col-sm-3 text-end">
-                                                <input type="checkbox" class="form-check-input" id="toggleColumn_today" checked>
-                                            </span>
-                                        </label>
-                                        <!-- End Form Switch -->
-
-                                        <!-- Form Switch -->
-                                        <label class="row form-check form-switch" for="toggleColumn_sessions">
-                                            <span class="col-8 col-sm-9 ms-0">
-                                                <span class="me-2">Занятия</span>
-                                            </span>
-                                            <span class="col-4 col-sm-3 text-end">
-                                                <input type="checkbox" class="form-check-input" id="toggleColumn_sessions" checked>
-                                            </span>
-                                        </label>
-                                        <!-- End Form Switch -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- End Dropdown -->
+                    <button class="btn btn-white" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasColumnsFilter" aria-controls="offcanvasColumnsFilter">
+                        <i class="bi-table me-1"></i> Колонки <span class="badge bg-soft-dark text-dark rounded-circle ms-1">4</span>
+                    </button>
                 </div>
             </div>
             <!-- End Header -->
@@ -221,35 +176,35 @@
             <div class="d-grid gap-2 mb-2">
                 <!-- Form Check -->
                 <div class="form-check">
-                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="" id="statusFilterRadio1" data-target-column-index="2">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="" id="statusFilterRadio1" data-target-column-index="1">
                     <label class="form-check-label" for="statusFilterRadio1">Все статусы</label>
                 </div>
                 <!-- End Form Check -->
 
                 <!-- Form Check -->
                 <div class="form-check">
-                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="on_time" id="statusFilterRadio2" data-target-column-index="2">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="✓" id="statusFilterRadio2" data-target-column-index="1">
                     <label class="form-check-label" for="statusFilterRadio2">Вовремя</label>
                 </div>
                 <!-- End Form Check -->
 
                 <!-- Form Check -->
                 <div class="form-check">
-                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="too_late" id="statusFilterRadio3" data-target-column-index="2">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="!" id="statusFilterRadio3" data-target-column-index="1">
                     <label class="form-check-label" for="statusFilterRadio3">Опоздали</label>
                 </div>
                 <!-- End Form Check -->
 
                 <!-- Form Check -->
                 <div class="form-check">
-                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="too_early" id="statusFilterRadio4" data-target-column-index="2">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="~" id="statusFilterRadio4" data-target-column-index="1">
                     <label class="form-check-label" for="statusFilterRadio4">Рано</label>
                 </div>
                 <!-- End Form Check -->
 
                 <!-- Form Check -->
                 <div class="form-check">
-                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="unknown" id="statusFilterRadio5" data-target-column-index="2">
+                    <input class="form-check-input js-datatable-filter" type="radio" name="attendanceStatusFilterRadio" value="?" id="statusFilterRadio5" data-target-column-index="1">
                     <label class="form-check-label" for="statusFilterRadio5">Неизвестно</label>
                 </div>
                 <!-- End Form Check -->
@@ -307,6 +262,49 @@
         <!-- End Footer -->
     </div>
     <!-- End Filter Offcanvas -->
+
+    <!-- Columns Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasColumnsFilter" aria-labelledby="offcanvasColumnsFilterLabel">
+        <div class="offcanvas-header">
+            <h4 id="offcanvasColumnsFilterLabel" class="mb-0">Колонки</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <span class="text-cap small">Выберите видимые колонки</span>
+
+            <div class="d-grid gap-3 mb-4">
+                <!-- Form Switch -->
+                <label class="row form-check form-switch" for="toggleColumn_participant">
+                    <span class="col-8 col-sm-9 ms-0">
+                        <span class="me-2">Участник</span>
+                    </span>
+                    <span class="col-4 col-sm-3 text-end">
+                        <input type="checkbox" class="form-check-input column-toggle" id="toggleColumn_participant" checked data-column="0">
+                    </span>
+                </label>
+                <!-- End Form Switch -->
+
+                <!-- Form Switch -->
+                <label class="row form-check form-switch" for="toggleColumn_today">
+                    <span class="col-8 col-sm-9 ms-0">
+                        <span class="me-2">Сегодня</span>
+                    </span>
+                    <span class="col-4 col-sm-3 text-end">
+                        <input type="checkbox" class="form-check-input column-toggle" id="toggleColumn_today" checked data-column="1">
+                    </span>
+                </label>
+                <!-- End Form Switch -->
+
+                <!-- Dynamic session columns will be added here by JavaScript -->
+                <div id="dynamic-columns"></div>
+            </div>
+
+            <a class="link" href="javascript:;" onclick="resetColumns()">
+                <i class="bi-arrow-clockwise"></i> Сбросить к начальному состоянию
+            </a>
+        </div>
+    </div>
+    <!-- End Columns Offcanvas -->
 
     <!-- Legend Modal -->
     <div class="modal fade" id="legendModal" tabindex="-1" aria-labelledby="legendModalLabel" aria-hidden="true">
@@ -535,19 +533,15 @@
             }, 1);
         });
 
-        // Column toggle functionality
-        $('#toggleColumn_participant').change(function (e) {
-            datatable.columns(1).visible(e.target.checked)
-        });
+        // Динамическое создание переключателей колонок для сессий
+        createDynamicColumnToggles();
+        updateColumnsBadge(); // Инициализация badge
 
-        $('#toggleColumn_today').change(function (e) {
-            datatable.columns(2).visible(e.target.checked)
-        });
-
-        $('#toggleColumn_sessions').change(function (e) {
-            for(let i = 3; i < sessions.length + 3; i++) {
-                datatable.columns(i).visible(e.target.checked);
-            }
+        // Column toggle functionality с делегированными событиями
+        $(document).on('change', '.column-toggle', function (e) {
+            const columnIndex = parseInt(e.target.getAttribute('data-column'));
+            datatable.columns(columnIndex).visible(e.target.checked);
+            updateColumnsBadge();
         });
 
         // Initialize TomSelect
@@ -582,6 +576,44 @@
         document.querySelectorAll('.js-datatable-filter').forEach(el => el.checked = false);
         const datatable = HSCore.components.HSDatatables.getItem('datatable');
         datatable.search('').columns().search('').draw();
+    }
+
+    function createDynamicColumnToggles() {
+        const dynamicContainer = document.getElementById('dynamic-columns');
+        
+        sessions.forEach(([sessionId, sessionDate], index) => {
+            const columnIndex = index + 2; // 0=Участник, 1=Сегодня, 2+=Сессии
+            const sessionLabel = formatDate(sessionDate);
+            
+            const toggleHtml = '<label class="row form-check form-switch" for="toggleColumn_session_' + sessionId + '">' +
+                '<span class="col-8 col-sm-9 ms-0">' +
+                '<span class="me-2">' + sessionLabel + '</span>' +
+                '</span>' +
+                '<span class="col-4 col-sm-3 text-end">' +
+                '<input type="checkbox" class="form-check-input column-toggle" id="toggleColumn_session_' + sessionId + '" checked data-column="' + columnIndex + '">' +
+                '</span>' +
+                '</label>';
+            
+            dynamicContainer.innerHTML += toggleHtml;
+        });
+    }
+
+    function updateColumnsBadge() {
+        const visibleColumns = document.querySelectorAll('.column-toggle:checked').length;
+        const badge = document.querySelector('.badge.bg-soft-dark');
+        if (badge) {
+            badge.textContent = visibleColumns;
+        }
+    }
+
+    function resetColumns() {
+        document.querySelectorAll('.column-toggle').forEach(toggle => {
+            toggle.checked = true;
+            const columnIndex = parseInt(toggle.getAttribute('data-column'));
+            const datatable = HSCore.components.HSDatatables.getItem('datatable');
+            datatable.columns(columnIndex).visible(true);
+        });
+        updateColumnsBadge();
     }
 
 

@@ -31,9 +31,6 @@
                         <a class="btn btn-outline-primary" href="{% url 'groups:group_detail' group.id %}">
                             <i class="bi-arrow-left me-1"></i> Назад к группе
                         </a>
-                        <a class="btn btn-primary" href="#">
-                            <i class="bi-download me-1"></i> Экспорт
-                        </a>
                     </div>
                 </div>
             </div>
@@ -152,14 +149,16 @@
                     </form>
                 </div>
 
-                <div class="d-grid d-sm-flex gap-2">
+                <div class="d-flex gap-2">
+                    <div id="datatable-buttons" class="d-flex gap-2"></div>
+                    
                     <button class="btn btn-white" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasParticipantFilter" aria-controls="offcanvasParticipantFilter">
                         <i class="bi-filter me-1"></i> Фильтры
                     </button>
 
                     <!-- Dropdown -->
                     <div class="dropdown">
-                        <button type="button" class="btn btn-white w-100" id="showHideDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <button type="button" class="btn btn-white" id="showHideDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
                             <i class="bi-table me-1"></i> Колонки <span class="badge bg-soft-dark text-dark rounded-circle ms-1">8</span>
                         </button>
 
@@ -391,24 +390,7 @@
                                                     <i class="bi-pencil-fill me-1"></i> Отметить
                                                 </button>
 
-                                                <!-- Button Group -->
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-white btn-icon btn-sm dropdown-toggle dropdown-toggle-empty" id="participantEditDropdown{{ forloop.counter }}" data-bs-toggle="dropdown" aria-expanded="false"></button>
 
-                                                    <div class="dropdown-menu dropdown-menu-end mt-1" aria-labelledby="participantEditDropdown{{ forloop.counter }}">
-                                                        <a class="dropdown-item" href="#">
-                                                            <i class="bi-eye dropdown-item-icon"></i> Подробности
-                                                        </a>
-                                                        <a class="dropdown-item" href="#">
-                                                            <i class="bi-pencil dropdown-item-icon"></i> Редактировать
-                                                        </a>
-                                                        <div class="dropdown-divider"></div>
-                                                        <a class="dropdown-item text-danger" href="#">
-                                                            <i class="bi-trash dropdown-item-icon"></i> Удалить запись
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                                <!-- End Button Group -->
                                             </div>
                                         {% endif %}
                                     </td>
@@ -638,27 +620,32 @@
     <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
     <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
     <script src="{% static 'main/assets/vendor/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/jszip/dist/jszip.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'main/assets/vendor/pdfmake/build/vfs_fonts.js' %}"></script>
 
 
     <script>
     document.addEventListener("DOMContentLoaded", function () {
         // Инициализация DataTable в стиле ecommerce-products
         const datatable = HSCore.components.HSDatatables.init($('#participant-table'), {
+            dom: 'Bfrtip',
             buttons: [
                 {
                     extend: 'excel',
-                    className: 'btn btn-white btn-sm',
+                    className: 'btn btn-outline-secondary me-2',
                     text: '<i class="bi-file-earmark-excel me-1"></i> Excel'
                 },
                 {
                     extend: 'pdf',
-                    className: 'btn btn-white btn-sm',
-                    text: '<i class="bi-file-earmark-pdf me-1"></i> PDF'
-                },
-                {
-                    extend: 'print',
-                    className: 'btn btn-white btn-sm',
-                    text: '<i class="bi-printer me-1"></i> Печать'
+                    className: 'btn btn-outline-secondary me-2',
+                    text: '<i class="bi-file-earmark-pdf me-1"></i> PDF',
+                    title: 'Посещаемость участника: {{ participant.user.first_name }} {{ participant.user.last_name }}',
+                    orientation: 'landscape',
+                    pageSize: 'A4',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
                 }
             ],
             language: {
@@ -670,6 +657,14 @@
                 </div>`
             }
         });
+
+        // Перемещаем кнопки DataTables в наш контейнер
+        setTimeout(() => {
+            const buttons = $('.dataTables_wrapper .dt-buttons');
+            buttons.appendTo('#datatable-buttons');
+            // Принудительно обновляем порядок
+            $('#datatable-buttons').addClass('d-flex gap-2');
+        }, 200);
 
         // Filter functionality как в ecommerce-products
         document.querySelectorAll('.js-datatable-filter').forEach(function (item) {
