@@ -19,14 +19,7 @@
                     </nav>
                     <h1 class="page-header-title">QR-коды для сессии <span class="badge bg-soft-dark text-dark ms-2">{{ session.date|date:"d.m.Y" }}</span></h1>
                     
-                    <div class="mt-2">
-                        <a class="text-body me-3" href="#" onclick="downloadAllQR()">
-                            <i class="bi-download me-1"></i> Скачать все QR
-                        </a>
-                        <a class="text-body" href="#" onclick="printQRCodes()">
-                            <i class="bi-printer me-1"></i> Печать QR
-                        </a>
-                    </div>
+
                 </div>
                 <!-- End Col -->
 
@@ -35,23 +28,7 @@
                         <a class="btn btn-outline-primary" href="{% url 'groups:group_detail' session.group.id %}">
                             <i class="bi-arrow-left me-1"></i> Назад к группе
                         </a>
-                        <div class="dropdown">
-                            <button type="button" class="btn btn-primary dropdown-toggle" id="qrActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi-gear me-1"></i> Действия
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="qrActionsDropdown">
-                                <a class="dropdown-item" href="#" onclick="printQRCodes()">
-                                    <i class="bi-printer dropdown-item-icon"></i> Печать QR-кодов
-                                </a>
-                                <a class="dropdown-item" href="#" onclick="downloadAllQR()">
-                                    <i class="bi-download dropdown-item-icon"></i> Скачать все
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" onclick="regenerateAllQR()">
-                                    <i class="bi-arrow-clockwise dropdown-item-icon"></i> Перегенерировать все
-                                </a>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
                 <!-- End Col -->
@@ -169,7 +146,7 @@
                                         <input type="hidden" name="mode" value="entry">
                                         <button type="submit" class="btn btn-primary btn-sm">
                                             {% if session.qr_file_entry %}
-                                                <i class="bi-arrow-clockwise me-1"></i> Перегенерировать
+                                                <i class="bi-download me-1"></i> Скачать PDF
                                             {% else %}
                                                 <i class="bi-plus me-1"></i> Сгенерировать
                                             {% endif %}
@@ -184,7 +161,7 @@
                         {% if session.qr_file_entry %}
                             <div class="mb-4">
                                 <img src="{{ session.qr_file_entry.url }}" alt="QR-код для входа" 
-                                     style="max-width: 100%; height: auto; max-height: 400px;" 
+                                     style="max-width: 500px; width: 100%; height: auto;" 
                                      class="img-fluid rounded">
                             </div>
                             
@@ -244,7 +221,7 @@
                                         <input type="hidden" name="mode" value="exit">
                                         <button type="submit" class="btn btn-primary btn-sm">
                                             {% if session.qr_file_exit %}
-                                                <i class="bi-arrow-clockwise me-1"></i> Перегенерировать
+                                                <i class="bi-download me-1"></i> Скачать PDF
                                             {% else %}
                                                 <i class="bi-plus me-1"></i> Сгенерировать
                                             {% endif %}
@@ -259,13 +236,13 @@
                         {% if session.qr_file_exit %}
                             <div class="mb-4">
                                 <img src="{{ session.qr_file_exit.url }}" alt="QR-код для выхода" 
-                                     style="max-width: 100%; height: auto; max-height: 400px;" 
+                                     style="max-width: 500px; width: 100%; height: auto;" 
                                      class="img-fluid rounded">
                             </div>
                             
                             <div class="row justify-content-center">
                                 <div class="col-sm-8 col-md-6">
-                                    <div class="alert alert-soft-danger" role="alert">
+                                    <div class="alert alert-soft-success" role="alert">
                                         <div class="d-flex align-items-center">
                                             <div class="flex-shrink-0">
                                                 <i class="bi-check-circle"></i>
