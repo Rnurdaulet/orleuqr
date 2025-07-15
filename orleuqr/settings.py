@@ -27,6 +27,7 @@ INSTALLED_APPS = [
 
     "corsheaders",
     "whitenoise",
+    "rest_framework",
 
     "apps.accounts",
     "apps.participants",

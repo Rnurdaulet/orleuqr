@@ -1,190 +1,214 @@
-# API Токены для доверенных сервисов
+# API Токены - Документация по использованию
 
-Система API токенов позволяет доверенным сервисам обращаться к API проекта без использования пользовательской аутентификации через Keycloak.
+## Обзор
 
-## Особенности
+Этот документ описывает использование API токенов для доступа к REST API системы учета посещаемости.
 
-- **Безопасность**: Токены хешируются с использованием SHA-256
-- **Уровни доступа**: read_only, read_write, admin
-- **IP ограничения**: Возможность ограничить доступ по IP адресам
-- **Срок действия**: Токены могут иметь ограниченный срок действия
-- **Отслеживание**: Логирование времени последнего использования
+## Аутентификация
 
-## Управление токенами
-
-### 1. Через админку Django
-
-Перейдите в `/admin/core/apitoken/` для управления токенами через веб-интерфейс.
-
-### 2. Через management команду
-
-#### Создание токена
-```bash
-# Базовый токен с правами только на чтение
-python manage.py manage_api_tokens create "Мой Сервис"
-
-# Токен с правами на запись
-python manage.py manage_api_tokens create "Внешний API" --permissions read_write
-
-# Токен с административными правами и ограничением по IP
-python manage.py manage_api_tokens create "Админский сервис" \
-    --permissions admin \
-    --ip-whitelist "192.168.1.100,10.0.0.5" \
-    --description "Сервис для административных операций"
-
-# Токен с ограниченным сроком действия (30 дней)
-python manage.py manage_api_tokens create "Временный сервис" \
-    --expires-days 30
-```
-
-#### Просмотр токенов
-```bash
-# Все токены
-python manage.py manage_api_tokens list
-
-# Только активные токены
-python manage.py manage_api_tokens list --active-only
-```
-
-#### Управление токенами
-```bash
-# Информация о токене
-python manage.py manage_api_tokens info 1
-
-# Деактивация токена
-python manage.py manage_api_tokens deactivate 1
-
-# Активация токена
-python manage.py manage_api_tokens activate 1
-
-# Удаление токена
-python manage.py manage_api_tokens delete 1 --confirm
-```
-
-### 3. Через API (только для admin токенов)
-
-#### Создание токена
-```bash
-curl -X POST http://localhost:8000/api/tokens/create/ \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Новый сервис",
-    "permissions": "read_write",
-    "description": "Описание сервиса",
-    "expires_days": 60
-  }'
-```
-
-#### Список токенов
-```bash
-curl http://localhost:8000/api/tokens/ \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
-```
-
-## Использование API
-
-### Аутентификация
-
-Добавьте заголовок Authorization ко всем API запросам:
-
+Все API запросы должны включать HTTP заголовок авторизации:
 ```
 Authorization: Bearer YOUR_API_TOKEN
 ```
 
-### Доступные эндпоинты
+## Уровни доступа
 
-#### 1. Проверка работоспособности (read_only)
+1. **read_only** - только чтение данных
+2. **read_write** - чтение и запись данных  
+3. **admin** - полный доступ + управление токенами
+
+## Управление токенами
+
+### Создание токена (только для администраторов)
+
 ```bash
-curl http://localhost:8000/api/health/ \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-Ответ:
-```json
-{
-  "status": "healthy",
-  "message": "API работает корректно",
-  "authenticated_service": "Мой Сервис",
-  "permissions": "read_only",
-  "timestamp": "2025-01-15T12:30:00.000Z"
-}
-```
-
-#### 2. Список участников (read_only)
-```bash
-curl "http://localhost:8000/api/participants/?page=1&per_page=10&role=participant" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-Параметры:
-- `page`: Номер страницы (по умолчанию: 1)
-- `per_page`: Записей на странице (максимум 100, по умолчанию: 20)
-- `role`: Фильтр по роли (participant/trainer)
-- `search`: Поиск по имени, email или ИИН
-
-#### 3. Список групп (read_only)
-```bash
-curl http://localhost:8000/api/groups/ \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-#### 4. Отметка посещаемости (read_write)
-```bash
-curl -X POST http://localhost:8000/api/attendance/mark/ \
-  -H "Authorization: Bearer YOUR_WRITE_TOKEN" \
+curl -X POST http://localhost:8000/api/tokens/ \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": 123,
-    "participant_id": 456,
-    "mode": "entry"
+    "name": "my-service",
+    "permissions": "read_only",
+    "description": "Токен для чтения данных",
+    "expires_days": 30
   }'
 ```
 
-Параметры:
-- `session_id`: ID сессии
-- `participant_id`: ID участника
-- `mode`: "entry" (вход) или "exit" (выход)
+### Удаление токена
 
-## Уровни доступа
-
-### read_only
-- Получение информации об участниках
-- Получение информации о группах
-- Проверка работоспособности API
-
-### read_write
-- Все права read_only
-- Отметка посещаемости
-- Создание и изменение записей
-
-### admin
-- Все права read_write
-- Управление API токенами
-- Административные операции
-
-## Безопасность
-
-### Рекомендации
-1. **Храните токены в безопасном месте** (переменные окружения, секреты)
-2. **Используйте минимально необходимые права** доступа
-3. **Ограничивайте доступ по IP** при возможности
-4. **Устанавливайте срок действия** для временных интеграций
-5. **Регулярно ротируйте токены**
-
-### IP ограничения
-Токены могут быть ограничены по IP адресам:
-```
-# Один IP
-192.168.1.100
-
-# Несколько IP через запятую
-192.168.1.100,10.0.0.5,203.0.113.1
+```bash
+curl -X DELETE http://localhost:8000/api/tokens/TOKEN_ID/ \
+  -H "Authorization: Bearer ADMIN_TOKEN"
 ```
 
-### Обработка ошибок
+## Проверка состояния API
 
-#### 401 Unauthorized
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  http://localhost:8000/api/health/
+```
+
+## API Групп и Посещаемости
+
+### Получение групп участника
+
+**Endpoint:** `GET /api/groups/my_groups/`
+
+**Параметры запроса:**
+- `participant_iin` (обязательный) - ИИН участника
+- `page` (опциональный) - номер страницы (по умолчанию: 1)
+- `per_page` (опциональный) - количество элементов на странице (по умолчанию: 10, максимум: 100)
+
+**Пример запроса:**
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://localhost:8000/api/groups/my_groups/?participant_iin=123456789012&page=1&per_page=5"
+```
+
+**Пример ответа:**
+```json
+{
+  "groups": [
+    {
+      "id": 1,
+      "code": "GROUP001",
+      "course_name": "Веб-разработка",
+      "start_date": "2024-01-15",
+      "end_date": "2024-06-15",
+      "sessions_count": 48,
+      "sessions": [
+        {
+          "id": 101,
+          "date": "2024-01-15",
+          "is_today": false,
+          "attendance": {
+            "id": 501,
+            "arrived_at": "2024-01-15T09:15:00Z",
+            "arrived_status": "on_time",
+            "arrived_status_display": "Вовремя",
+            "left_at": "2024-01-15T17:45:00Z", 
+            "left_status": "on_time",
+            "left_status_display": "Вовремя",
+            "trust_level": "trusted",
+            "trust_level_display": "Доверенный",
+            "trust_score": 85,
+            "marked_entry_by_trainer": false,
+            "marked_exit_by_trainer": true
+          }
+        },
+        {
+          "id": 102,
+          "date": "2024-01-16",
+          "is_today": true,
+          "attendance": {
+            "id": 502,
+            "arrived_at": "2024-01-16T09:35:00Z",
+            "arrived_status": "too_late",
+            "arrived_status_display": "Опоздал",
+            "left_at": null,
+            "left_status": null,
+            "left_status_display": null,
+            "trust_level": "suspicious",
+            "trust_level_display": "Подозрительный",
+            "trust_score": 65,
+            "marked_entry_by_trainer": true,
+            "marked_exit_by_trainer": false
+          }
+        },
+        {
+          "id": 103,
+          "date": "2024-01-17",
+          "is_today": false,
+          "attendance": null
+        }
+      ]
+    }
+  ],
+  "total_groups": 1,
+  "participant_info": {
+    "iin": "123456789012",
+    "full_name": "Иванов Иван Иванович",
+    "role": "Участник"
+  },
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total_pages": 1,
+    "total_items": 1
+  },
+  "filter_options": {
+    "arrival_statuses": [
+      {"value": "on_time", "display": "Вовремя"},
+      {"value": "too_late", "display": "Опоздал"},
+      {"value": "too_early", "display": "Рано"},
+      {"value": "by_trainer", "display": "Отметка тренером"},
+      {"value": "unknown", "display": "Неизвестно"}
+    ],
+    "trust_levels": [
+      {"value": "trusted", "display": "Доверенный"},
+      {"value": "suspicious", "display": "Подозрительный"},
+      {"value": "blocked", "display": "Заблокирован"},
+      {"value": "manual_by_trainer", "display": "Ручная отметка"}
+    ]
+  }
+}
+```
+
+### Описание полей
+
+**Основная структура ответа:**
+- `groups[]` - массив групп участника
+- `total_groups` - общее количество групп
+- `participant_info` - информация об участнике
+- `pagination` - данные пагинации
+- `filter_options` - доступные опции для фильтрации
+- `message` (опционально) - информационное сообщение
+- `details` (опционально) - дополнительные детали
+
+**Participant Info (Информация об участнике):**
+- `iin` - ИИН участника
+- `full_name` - полное имя участника
+- `role` - роль пользователя (обычно "Участник")
+
+**Group (Группа):**
+- `id` - уникальный идентификатор группы
+- `code` - код группы
+- `course_name` - название курса
+- `start_date` - дата начала курса
+- `end_date` - дата окончания курса
+- `sessions_count` - общее количество сессий в группе
+
+**Session (Сессия):**
+- `id` - уникальный идентификатор сессии
+- `date` - дата сессии
+- `is_today` - является ли сессия сегодняшней
+- `attendance` - данные о посещаемости (может быть `null`, если участник не посещал)
+
+**Attendance (Посещаемость):**
+- `id` - уникальный идентификатор записи посещаемости
+- `arrived_at` - время прихода (ISO 8601 формат)
+- `arrived_status` - статус прихода (см. filter_options)
+- `arrived_status_display` - отображаемое название статуса прихода
+- `left_at` - время ухода (может быть `null`)
+- `left_status` - статус ухода
+- `left_status_display` - отображаемое название статуса ухода
+- `trust_level` - уровень доверия (см. filter_options)
+- `trust_level_display` - отображаемое название уровня доверия
+- `trust_score` - числовой показатель доверия (0-100)
+- `marked_entry_by_trainer` - отмечен ли вход тренером вручную
+- `marked_exit_by_trainer` - отмечен ли выход тренером вручную
+
+### Коды ошибок
+
+#### **400 Bad Request** - неверные параметры запроса
+```json
+{
+  "error": "Missing required parameter",
+  "message": "Параметр participant_iin обязателен",
+  "details": "Укажите ИИН участника в параметре participant_iin"
+}
+```
+
+#### **401 Unauthorized** - отсутствует или неверный токен
 ```json
 {
   "error": "Authentication failed",
@@ -192,111 +216,108 @@ curl -X POST http://localhost:8000/api/attendance/mark/ \
 }
 ```
 
-#### 403 Forbidden
+#### **403 Forbidden** - недостаточно прав доступа
 ```json
 {
-  "error": "Insufficient permissions",
-  "message": "Требуется уровень доступа: read_write"
+  "error": "Insufficient permissions", 
+  "message": "Требуется уровень доступа: read_only"
 }
 ```
 
-#### 404 Not Found
+#### **404 Not Found** - участник не найден
 ```json
 {
-  "error": "Session not found", 
-  "message": "Сессия с ID 123 не найдена"
+  "error": "Participant not found",
+  "message": "Участник с ИИН 123456789012 не найден",
+  "details": "Проверьте правильность ИИН или убедитесь, что профиль имеет роль \"Участник\"",
+  "groups": [],
+  "total_groups": 0,
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total_pages": 0,
+    "total_items": 0
+  },
+  "filter_options": {...}
 }
 ```
 
-## Примеры интеграции
+#### **200 OK** - участник найден, но нет групп
+```json
+{
+  "groups": [],
+  "total_groups": 0,
+  "message": "У участника Иванов Иван Иванович нет активных групп",
+  "details": "Возможно, все группы завершены или участник еще не записан ни в одну группу",
+  "participant_info": {
+    "iin": "123456789012",
+    "full_name": "Иванов Иван Иванович",
+    "role": "Участник"
+  },
+  "pagination": {...},
+  "filter_options": {...}
+}
+```
 
-### Python (requests)
+#### **500 Internal Server Error** - внутренняя ошибка сервера
+
+### Примеры использования
+
+**Python (requests):**
 ```python
 import requests
 
-API_TOKEN = "YOUR_API_TOKEN"
-BASE_URL = "http://localhost:8000/api"
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+params = {'participant_iin': '123456789012', 'page': 1, 'per_page': 5}
 
-headers = {
-    "Authorization": f"Bearer {API_TOKEN}",
-    "Content-Type": "application/json"
-}
-
-# Получение участников
-response = requests.get(f"{BASE_URL}/participants/", headers=headers)
-participants = response.json()
-
-# Отметка посещаемости
-attendance_data = {
-    "session_id": 123,
-    "participant_id": 456,
-    "mode": "entry"
-}
-response = requests.post(
-    f"{BASE_URL}/attendance/mark/", 
-    json=attendance_data, 
-    headers=headers
+response = requests.get(
+    'http://localhost:8000/api/groups/my_groups/',
+    headers=headers,
+    params=params
 )
+
+data = response.json()
+print(f"Найдено групп: {data['total_groups']}")
+
+for group in data['groups']:
+    print(f"Группа: {group['code']} - {group['course_name']}")
+    for session in group['sessions']:
+        if session['attendance']:
+            print(f"  {session['date']}: {session['attendance']['arrived_status_display']}")
+        else:
+            print(f"  {session['date']}: Не посещал")
 ```
 
-### JavaScript (fetch)
+**JavaScript (fetch):**
 ```javascript
-const API_TOKEN = 'YOUR_API_TOKEN';
-const BASE_URL = 'http://localhost:8000/api';
+const headers = {'Authorization': 'Bearer YOUR_TOKEN'};
+const params = new URLSearchParams({
+    participant_iin: '123456789012',
+    page: 1,
+    per_page: 5
+});
 
-const headers = {
-    'Authorization': `Bearer ${API_TOKEN}`,
-    'Content-Type': 'application/json'
-};
-
-// Получение групп
-fetch(`${BASE_URL}/groups/`, { headers })
+fetch(`http://localhost:8000/api/groups/my_groups/?${params}`, {headers})
     .then(response => response.json())
-    .then(data => console.log(data));
-
-// Отметка посещаемости
-fetch(`${BASE_URL}/attendance/mark/`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-        session_id: 123,
-        participant_id: 456,
-        mode: 'entry'
-    })
-})
-.then(response => response.json())
-.then(data => console.log(data));
+    .then(data => {
+        console.log(`Найдено групп: ${data.total_groups}`);
+        
+        data.groups.forEach(group => {
+            console.log(`Группа: ${group.code} - ${group.course_name}`);
+            group.sessions.forEach(session => {
+                const status = session.attendance 
+                    ? session.attendance.arrived_status_display 
+                    : 'Не посещал';
+                console.log(`  ${session.date}: ${status}`);
+            });
+        });
+    });
 ```
 
-### cURL примеры
-```bash
-# Переменная для удобства
-export API_TOKEN="YOUR_API_TOKEN"
-export API_URL="http://localhost:8000/api"
+## Безопасность
 
-# Проверка здоровья
-curl "$API_URL/health/" -H "Authorization: Bearer $API_TOKEN"
-
-# Участники с фильтрацией
-curl "$API_URL/participants/?role=trainer&search=Иванов" \
-  -H "Authorization: Bearer $API_TOKEN"
-
-# Отметка прихода
-curl -X POST "$API_URL/attendance/mark/" \
-  -H "Authorization: Bearer $API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": 123, "participant_id": 456, "mode": "entry"}'
-```
-
-## Мониторинг и логи
-
-Все API запросы логируются с информацией о:
-- Использованном токене
-- IP адресе клиента
-- Времени запроса
-- Результате аутентификации
-
-Просмотр логов:
-```bash
-tail -f logs/django.log | grep "API request authenticated"
-``` 
+1. **Храните токены в безопасности** - не передавайте их через URL или незащищенные каналы
+2. **Используйте HTTPS** в продакшене
+3. **Ограничивайте срок действия токенов** - устанавливайте разумные сроки истечения
+4. **Мониторьте использование** - следите за активностью токенов
+5. **Отзывайте скомпрометированные токены** - немедленно удаляйте подозрительные токены 
