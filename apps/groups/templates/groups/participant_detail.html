@@ -272,7 +272,7 @@
                                     </td>
                                     <td>
                                         {% if att and att.arrived_at %}
-                                            <span class="text-body">{{ att.arrived_at|time:"H:i" }}</span>
+                                            <span class="text-body">{{ att.arrived_at|localtime|time:"H:i" }}</span>
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}
@@ -302,7 +302,7 @@
                                     </td>
                                     <td>
                                         {% if att and att.left_at %}
-                                            <span class="text-body">{{ att.left_at|time:"H:i" }}</span>
+                                            <span class="text-body">{{ att.left_at|localtime|time:"H:i" }}</span>
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}

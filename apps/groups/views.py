@@ -1,7 +1,7 @@
 from collections import defaultdict
 from django.db.models import Prefetch, Q
 from django.shortcuts import render, get_object_or_404
-from django.utils.timezone import now, localdate
+from django.utils.timezone import now, localdate, localtime
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.contrib import messages
 
@@ -137,8 +137,8 @@ def attendance_json_view(request, group_id):
                 "participant": participant.full_name,
                 "date": session.date.strftime("%Y-%m-%d"),
                 "session_id": session.id,
-                "arrived_at": att.arrived_at.strftime("%H:%M") if att and att.arrived_at else None,
-                "left_at": att.left_at.strftime("%H:%M") if att and att.left_at else None,
+                "arrived_at": localtime(att.arrived_at).strftime("%H:%M") if att and att.arrived_at else None,
+                "left_at": localtime(att.left_at).strftime("%H:%M") if att and att.left_at else None,
                 "arrived_status": att.arrived_status if att else None,
                 "left_status": att.left_status if att else None,
                 "marked_entry": bool(att.marked_entry_by_trainer) if att else False,
