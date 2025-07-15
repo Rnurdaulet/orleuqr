@@ -15,14 +15,7 @@
                     <p class="page-header-text">Управление учебными группами и мониторинг посещаемости</p>
                 </div>
                 <div class="col-sm-auto">
-                    <div class="d-flex gap-2">
-                        <a class="btn btn-outline-primary" href="#">
-                            <i class="bi-plus me-1"></i> Создать группу
-                        </a>
-                        <a class="btn btn-primary" href="#">
-                            <i class="bi-download me-1"></i> Экспорт
-                        </a>
-                    </div>
+     
                 </div>
             </div>
         </div>
@@ -40,25 +33,7 @@
                                         <h4 class="card-header-title">{{ group.code }}</h4>
                                     </div>
                                     <div class="col-auto">
-                                        <!-- Dropdown -->
-                                        <div class="dropdown">
-                                            <button type="button" class="btn btn-ghost-secondary btn-icon btn-sm rounded-circle" id="projectsGridDropdown{{ forloop.counter }}" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bi-three-dots-vertical"></i>
-                                            </button>
-                                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="projectsGridDropdown{{ forloop.counter }}">
-                                                <a class="dropdown-item" href="{% url 'groups:group_detail' group.id %}">
-                                                    <i class="bi-eye dropdown-item-icon"></i> Посмотреть
-                                                </a>
-                                                <a class="dropdown-item" href="#">
-                                                    <i class="bi-pencil dropdown-item-icon"></i> Редактировать
-                                                </a>
-                                                <div class="dropdown-divider"></div>
-                                                <a class="dropdown-item text-danger" href="#">
-                                                    <i class="bi-trash dropdown-item-icon"></i> Удалить
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <!-- End Dropdown -->
+                            
                                     </div>
                                 </div>
                             </div>
@@ -135,10 +110,7 @@
                 <div class="row justify-content-sm-center">
                     <div class="col-sm-7 col-md-5">
                         <h4>У вас пока нет активных групп</h4>
-                        <p>Создайте свою первую группу или обратитесь к администратору для получения доступа.</p>
-                        <a class="btn btn-primary" href="#">
-                            <i class="bi-plus me-1"></i> Создать группу
-                        </a>
+                        <p>Обратитесь к администратору для получения доступа.</p>
                     </div>
                 </div>
             </div>
