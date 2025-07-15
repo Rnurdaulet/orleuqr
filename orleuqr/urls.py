@@ -16,7 +16,7 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("qr/", include("apps.qr.urls")),
     path("attendance/", include("apps.attendance.urls", namespace="attendance")),
-
+    path("api/", include("apps.core.urls", namespace="api")),
     path("groups/", include("apps.groups.urls", namespace="groups")),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
