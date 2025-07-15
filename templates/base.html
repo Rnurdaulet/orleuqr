@@ -76,9 +76,10 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="has-navbar-vertical-aside navbar-vertical-aside-show-xl footer-offset">
+<body class="{% if user_profile %}has-navbar-vertical-aside navbar-vertical-aside-show-xl footer-offset{% endif %}">
     <script src="{% static 'main/assets/js/hs.theme-appearance.js' %}"></script>
 
+    {% if user_profile %}
     <!-- ========== HEADER ========== -->
     <header id="header" class="navbar navbar-expand-lg navbar-fixed navbar-height navbar-container navbar-bordered bg-white">
         <div class="navbar-nav-wrap">
@@ -90,8 +91,6 @@
                 <img class="navbar-brand-logo-mini" src="{% static 'main/assets/svg/logos-light/logo-short.svg' %}" alt="Logo" data-hs-theme-appearance="dark">
             </a>
             <!-- End Logo -->
-
-            {% if user_profile %}
             <div class="navbar-nav-wrap-content-start">
                 <!-- Navbar Vertical Toggle -->
                 <button type="button" class="js-navbar-vertical-aside-toggle-invoker navbar-aside-toggler">
@@ -134,7 +133,7 @@
                             <div class="dropdown">
                                 <a class="navbar-dropdown-account-wrapper" href="javascript:;" id="accountNavbarDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside" data-bs-dropdown-animation>
                                     <div class="avatar avatar-sm avatar-circle">
-                                        <span class="avatar-initials">{{ user_profile.full_name|slice:":1"|upper }}</span>
+                                        <span class="avatar-initials">{% for word in user_profile.full_name.split %}{% if forloop.counter <= 2 %}{{ word|slice:":1"|upper }}{% endif %}{% endfor %}</span>
                                         <span class="avatar-status avatar-sm-status avatar-status-success"></span>
                                     </div>
                                 </a>
@@ -143,7 +142,7 @@
                                     <div class="dropdown-item-text">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar avatar-sm avatar-circle">
-                                                <span class="avatar-initials">{{ user_profile.full_name|slice:":1"|upper }}</span>
+                                                <span class="avatar-initials">{% for word in user_profile.full_name.split %}{% if forloop.counter <= 2 %}{{ word|slice:":1"|upper }}{% endif %}{% endfor %}</span>
                                             </div>
                                             <div class="flex-grow-1 ms-3">
                                                 <h5 class="mb-0">{{ user_profile.full_name }}</h5>
@@ -152,7 +151,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="dropdown-divider"></div>
+                                    {% comment %} <div class="dropdown-divider"></div>
 
                                     <a class="dropdown-item" href="#">
                                         <span class="dropdown-item-icon">
@@ -165,7 +164,7 @@
                                             <i class="bi-gear"></i>
                                         </span>
                                         Настройки
-                                    </a>
+                                    </a> {% endcomment %}
 
                                     <div class="dropdown-divider"></div>
 
@@ -179,19 +178,13 @@
                             </div>
                             <!-- End Account -->
                         </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="btn btn-warning btn-lg px-4" href="/accounts/login/">
-                                Войти
-                            </a>
-                        </li>
-                    {% endif %}
                 </ul>
                 <!-- End Navbar -->
             </div>
         </div>
     </header>
     <!-- ========== END HEADER ========== -->
+    {% endif %}
 
     {% if user_profile %}
     <!-- ========== SIDEBAR ========== -->
@@ -273,10 +266,6 @@
                 <p class="fs-6 mb-0">&copy; {% now "Y" %} Система учета посещений ОРЛЕУ. Все права защищены.</p>
             </div>
         </div>
-    </div>
-    {% else %}
-    <div class="footer text-center py-4">
-        <p class="mb-0">&copy; {% now "Y" %} ОРЛЕУ. Система учета посещений.</p>
     </div>
     {% endif %}
     <!-- ========== END FOOTER ========== -->

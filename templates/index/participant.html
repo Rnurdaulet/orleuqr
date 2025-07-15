@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Панель участника - Система учета посещений | ОРЛЕУ{% endblock %}
+
+{% block content %}
+    <!-- Content -->
+    <div class="content container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="row align-items-end">
+                <div class="col-sm mb-2 mb-sm-0">
+                    <h1 class="page-header-title">Добро пожаловать, {{ user_profile.full_name }}!</h1>
+                    <p class="page-header-text">Управляйте посещаемостью эффективно с помощью системы QR-кодов</p>
+                </div>
+                <div class="col-sm-auto">
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-primary" href="/qr/scan/">
+                            <i class="bi-qr-code-scan me-1"></i> Сканировать QR
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Page Header -->
+
+        <!-- Stats for Participants -->
+        <div class="row justify-content-center">
+            <div class="col-sm-6 col-lg-4 mb-3 mb-lg-5">
+                <!-- Card -->
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2">Моих посещений сегодня</h6>
+                        <div class="row align-items-center gx-2">
+                            <div class="col">
+                                <span class="js-counter display-4 text-dark">{{ my_visits_today|default:0 }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-soft-success text-success p-1">
+                                    <i class="bi-check-circle-fill"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <small class="text-muted">Отлично! Продолжайте в том же духе!</small>
+                    </div>
+                </div>
+                <!-- End Card -->
+            </div>
+
+            <div class="col-sm-6 col-lg-4 mb-3 mb-lg-5">
+                <!-- Card -->
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2">Моих групп</h6>
+                        <div class="row align-items-center gx-2">
+                            <div class="col">
+                                <span class="js-counter display-4 text-dark">{{ my_groups_count|default:0 }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-soft-primary text-primary p-1">
+                                    <i class="bi-people-fill"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <small class="text-muted">Управляйте своим обучением!</small>
+                    </div>
+                </div>
+                <!-- End Card -->
+            </div>
+        </div>
+        <!-- End Stats -->
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-header-title">Быстрые действия</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <a href="/qr/scan/" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi-qr-code-scan me-2"></i>
+                                    Сканировать QR код
+                                </a>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <a href="{% url 'groups:my_groups' %}" class="btn btn-soft-primary btn-lg w-100">
+                                    <i class="bi-people me-2"></i>
+                                    Мои группы
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Quick Actions -->
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-header-title">Последняя активность</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="bi-clock-history fs-3 text-muted"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <p class="mb-0">Ваша последняя активность будет отображаться здесь</p>
+                                <small class="text-muted">Сканируйте QR-коды для отметки посещения</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Recent Activity -->
+    </div>
+    <!-- End Content -->
+{% endblock %} 

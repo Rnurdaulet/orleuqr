@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Добро пожаловать - Система учета посещений | Өрлеу{% endblock %}
+
+{% block content %}
+    <!-- Friendly Landing Page -->
+    <div class="d-flex align-items-center min-vh-100">
+        <div class="container-lg">
+            <div class="row align-items-center">
+                <!-- Left Column - Illustration -->
+                <div class="col-lg-6 text-center mb-5 mb-lg-0">
+                    <div class="mb-4">
+                        <img src="{% static 'main/assets/svg/illustrations/oc-collaboration.svg' %}" 
+                             alt="Сотрудничество" 
+                             class="img-fluid" 
+                             style="max-height: 400px;">
+                    </div>
+                </div>
+
+                <!-- Right Column - Content -->
+                <div class="col-lg-6">
+                    <div class="text-center text-lg-start">
+                        <!-- Welcome Message -->
+                        <div class="mb-5">
+                            <div class="d-inline-flex align-items-center bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3">
+                                <i class="bi-qr-code me-2"></i>
+                                <small class="fw-medium">Система учета посещений</small>
+                            </div>
+                            
+                            <h1 class="display-4 mb-3">
+                                Добро пожаловать в <br>
+                                <span class="text-primary">Өрлеу</span>
+                            </h1>
+                            
+                            <p class="lead text-muted mb-4">
+                                Современная и удобная система контроля посещаемости. 
+                                Простое сканирование QR-кода для быстрой регистрации участников.
+                            </p>
+                            
+                        </div>
+
+                        <!-- Login Button -->
+                        <div class="mb-5">
+                            <a class="btn btn-primary btn-lg px-5 py-3 shadow-sm" href="{% url 'accounts:login' %}">
+                                <i class="bi-box-arrow-in-right me-2"></i>
+                                Начать работу
+                            </a>
+                            <p class="small text-muted mt-2 mb-0">
+                                Войдите в систему, чтобы получить доступ к вашей панели управления
+                            </p>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="text-muted small">
+                            <p class="mb-1">
+                                <i class="bi-shield-check me-1"></i>
+                                Надежно и безопасно
+                            </p>
+                            <p class="mb-0">&copy; {% now "Y" %} Өрлеу. Все права защищены.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %} 

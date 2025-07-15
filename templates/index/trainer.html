@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Панель тренера - Система учета посещений | ОРЛЕУ{% endblock %}
+
+{% block content %}
+    <!-- Content -->
+    <div class="content container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="row align-items-end">
+                <div class="col-sm mb-2 mb-sm-0">
+                    <h1 class="page-header-title">Добро пожаловать, {{ user_profile.full_name }}!</h1>
+                    <p class="page-header-text">Управляйте посещаемостью эффективно с помощью системы QR-кодов</p>
+                </div>
+                <div class="col-sm-auto">
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-primary" href="{% url 'groups:trainer_groups' %}">
+                            <i class="bi-people-fill me-1"></i> Мои группы
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Page Header -->
+
+        <!-- Stats for Trainers/Admins -->
+        <div class="row">
+            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+                <!-- Card -->
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2">Всего групп</h6>
+                        <div class="row align-items-center gx-2">
+                            <div class="col">
+                                <span class="js-counter display-4 text-dark">{{ total_groups|default:0 }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-soft-success text-success p-1">
+                                    <i class="bi-people-fill"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Card -->
+            </div>
+
+            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+                <!-- Card -->
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2">Всего участников</h6>
+                        <div class="row align-items-center gx-2">
+                            <div class="col">
+                                <span class="js-counter display-4 text-dark">{{ total_participants|default:0 }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-soft-primary text-primary p-1">
+                                    <i class="bi-person-fill"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Card -->
+            </div>
+
+            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+                <!-- Card -->
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2">Посещений сегодня</h6>
+                        <div class="row align-items-center gx-2">
+                            <div class="col">
+                                <span class="js-counter display-4 text-dark">{{ today_visits|default:0 }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-soft-info text-info p-1">
+                                    <i class="bi-calendar-check"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Card -->
+            </div>
+
+            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+                <!-- Card -->
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2">Активных сессий</h6>
+                        <div class="row align-items-center gx-2">
+                            <div class="col">
+                                <span class="js-counter display-4 text-dark">{{ active_sessions|default:0 }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span class="badge bg-soft-warning text-warning p-1">
+                                    <i class="bi-clock-fill"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Card -->
+            </div>
+        </div>
+        <!-- End Stats -->
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-header-title">Быстрые действия</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <a href="{% url 'groups:trainer_groups' %}" class="btn btn-soft-primary btn-lg w-100">
+                                    <i class="bi-people-fill me-2"></i>
+                                    Управление группами
+                                </a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="/attendance/manual/" class="btn btn-soft-info btn-lg w-100">
+                                    <i class="bi-pencil-square me-2"></i>
+                                    Ручная отметка
+                                </a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="/qr/generate/" class="btn btn-soft-success btn-lg w-100">
+                                    <i class="bi-qr-code me-2"></i>
+                                    Создать QR сессию
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Quick Actions -->
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-header-title">Последняя активность</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="bi-activity fs-3 text-muted"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <p class="mb-0">Активность по вашим группам будет отображаться здесь</p>
+                                <small class="text-muted">Отслеживайте посещаемость и создавайте новые сессии</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Recent Activity -->
+    </div>
+    <!-- End Content -->
+{% endblock %} 

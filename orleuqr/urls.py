@@ -6,12 +6,12 @@ from django.conf.urls.i18n import i18n_patterns
 from django.views.i18n import set_language
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
+from apps.core.views import home_view
 
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
     path("admin/", admin.site.urls),
-    path("", TemplateView.as_view(template_name='index.html'), name='home'),
+    path("", home_view, name='home'),
     path('accounts/', include('apps.accounts.urls')),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("qr/", include("apps.qr.urls")),
