@@ -385,6 +385,10 @@
 
 
     <script>
+    // Глобальные переменные для доступа из функций
+    let sessions = [];
+    let participants = [];
+    
     document.addEventListener("DOMContentLoaded", async () => {
         const res = await fetch("{% url 'groups:attendance_json' group.id %}");
         const raw = await res.json();
@@ -404,8 +408,8 @@
             participantsMap.get(a.participant_id).attendance[a.session_id] = a;
         });
 
-        const sessions = Array.from(sessionsMap.entries()).sort((a, b) => new Date(a[1]) - new Date(b[1]));
-        const participants = Array.from(participantsMap.values());
+        sessions = Array.from(sessionsMap.entries()).sort((a, b) => new Date(a[1]) - new Date(b[1]));
+        participants = Array.from(participantsMap.values());
 
         const todayISO = new Date().toISOString().slice(0, 10);
 
@@ -425,24 +429,24 @@
 
         participants.forEach((p, i) => {
             const todaySession = sessions.find(([_, date]) => date === todayISO);
-            let todayCell = '<td>—</td>';
+            let todayCell = '<td>-</td>';
             if (todaySession) {
                 const a = p.attendance[todaySession[0]];
                 if (a) {
                     todayCell = '<td class="text-start">' +
-                        '<div><strong>В:</strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
-                        '<div><strong>У:</strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
+                        '<div><strong></strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
+                        '<div><strong></strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
                         '</td>';
                 }
             }
 
             // Собираем HTML строки
             const tr = document.createElement("tr");
-            let innerHTML = '<td>' +
+            let innerHTML = '<td data-export="' + p.name + '">' +
                 '<a class="d-flex align-items-center" href="/groups/{{ group.id }}/manual-attendance/' + p.id + '/" target="_blank">' +
                 '<div class="flex-shrink-0">' +
                 '<div class="avatar avatar-sm avatar-circle">' +
-                '<span class="avatar-initials">' + p.name.slice(0, 1).toUpperCase() + '</span>' +
+                '<span class="avatar-initials d-print-none">' + p.name.slice(0, 1).toUpperCase() + '</span>' +
                 '</div>' +
                 '</div>' +
                 '<div class="flex-grow-1 ms-3">' +
@@ -455,11 +459,11 @@
             sessions.forEach(([id]) => {
                 const a = p.attendance[id];
                 if (!a) {
-                    innerHTML += '<td>—</td>';
+                    innerHTML += '<td>-</td>';
                 } else {
                     innerHTML += '<td class="text-start">' +
-                        '<div><strong>В:</strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
-                        '<div><strong>У:</strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
+                        '<div><strong></strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
+                        '<div><strong></strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
                         '</td>';
                 }
             });
@@ -476,7 +480,20 @@
                 {
                     extend: 'excel',
                     className: 'btn btn-outline-secondary me-2',
-                    text: '<i class="bi-file-earmark-excel me-1"></i> Excel'
+                    text: '<i class="bi-file-earmark-excel me-1"></i> Excel',
+                    exportOptions: {
+                        columns: ':visible',
+                        format: {
+                            body: function(data, row, column, node) {
+                                // Для первой колонки (участники) используем data-export атрибут
+                                if (column === 0) {
+                                    return $(node).attr('data-export') || data;
+                                }
+                                // Для остальных колонок преобразуем HTML в текст
+                                return convertHtmlToText(data);
+                            }
+                        }
+                    }
                 },
                 {
                     extend: 'pdf',
@@ -486,7 +503,17 @@
                     orientation: 'landscape',
                     pageSize: 'A4',
                     exportOptions: {
-                        columns: ':visible'
+                        columns: ':visible',
+                        format: {
+                            body: function(data, row, column, node) {
+                                // Для первой колонки (участники) используем data-export атрибут
+                                if (column === 0) {
+                                    return $(node).attr('data-export') || data;
+                                }
+                                // Для остальных колонок преобразуем HTML в текст
+                                return convertHtmlToText(data);
+                            }
+                        }
                     }
                 }
             ],
@@ -563,8 +590,58 @@
             case 'unknown': 
                 return '<span class="badge bg-soft-secondary text-secondary">?</span>';
             default: 
-                return '<span class="text-muted">—</span>';
+                return '<span class="text-muted">-</span>';
         }
+    }
+
+    function convertHtmlToText(htmlString) {
+        if (!htmlString || htmlString === '-') {
+            return '-';
+        }
+        
+        // Создаем временный div для парсинга HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlString;
+        
+        const lines = [];
+        const divElements = tempDiv.querySelectorAll('div');
+        
+        if (divElements.length === 0) {
+            // Если нет div элементов, просто извлекаем текст
+            return tempDiv.textContent || tempDiv.innerText || '-';
+        }
+        
+        divElements.forEach((div, index) => {
+            let lineText = '';
+            
+            // Добавляем префикс для входа/выхода
+            const prefix = index === 0 ? ' ' : ' ';
+            lineText += prefix;
+            
+            // Извлекаем символ из badge
+            const badge = div.querySelector('.badge');
+            if (badge) {
+                const symbol = badge.textContent.trim();
+                if (symbol) {
+                    lineText += symbol + ' ';
+                }
+            }
+            
+            // Извлекаем время (все что не в badge)
+            const allText = div.textContent || div.innerText || '';
+            const badgeText = badge ? badge.textContent || '' : '';
+            const timeText = allText.replace(badgeText, '').trim();
+            
+            if (timeText) {
+                lineText += timeText;
+            } else {
+                lineText += '-';
+            }
+            
+            lines.push(lineText.trim());
+        });
+        
+        return lines.length > 0 ? lines.join('\n') : '-';
     }
 
     function formatDate(dateStr) {

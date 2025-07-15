@@ -100,7 +100,7 @@
                                             {% if attendance and attendance.arrived_at %}
                                                 <span class="text-body">{{ attendance.arrived_at|time:"H:i" }}</span>
                                             {% else %}
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -123,14 +123,14 @@
                                                     </span>
                                                 {% endif %}
                                             {% else %}
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if attendance and attendance.left_at %}
                                                 <span class="text-body">{{ attendance.left_at|time:"H:i" }}</span>
                                             {% else %}
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -153,7 +153,7 @@
                                                     </span>
                                                 {% endif %}
                                             {% else %}
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -171,17 +171,17 @@
                                                         <i class="bi-shield-x me-1"></i>{{ attendance.get_trust_level_display }}
                                                     </span>
                                                 {% else %}
-                                                    <span class="text-muted">—</span>
+                                                    <span class="text-muted">-</span>
                                                 {% endif %}
                                             {% else %}
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if attendance %}
                                                 <span class="badge bg-soft-primary text-primary">{{ attendance.trust_score }}</span>
                                             {% else %}
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
                                         <td>
