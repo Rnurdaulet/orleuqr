@@ -1,26 +1,229 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block title %}Успешно отмечен - QR Система{% endblock %}
+
 {% block content %}
-  <div class="container py-5 text-center">
-    {% if is_exit %}
-      <h1 class="display-4 text-success">✅ {% trans "Вы успешно вышли" %}</h1>
-      <p class="lead mt-3">
-        {% trans "Время выхода:" %} <strong>{{ attendance.left_at|date:"d.m.Y H:i" }}</strong>
-      </p>
-    {% else %}
-      <h1 class="display-4 text-success">✅ {% trans "Вы успешно вошли" %}</h1>
-      <p class="lead mt-3">
-        {% trans "Время входа:" %} <strong>{{ attendance.arrived_at|date:"d.m.Y H:i" }}</strong>
-      </p>
-    {% endif %}
+<div class="container-fluid bg-light min-vh-100 d-flex align-items-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-3">
+          <div class="card-body p-5 text-center">
+            <!-- Success Icon -->
+            <div class="mb-4">
+              <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle mb-3" style="width: 80px; height: 80px;">
+                <i class="bi-check-circle-fill text-success" style="font-size: 2.5rem;" id="success-icon"></i>
+              </div>
+              
+              {% if is_exit %}
+                <h2 class="h3 fw-bold text-success mb-3">
+                  {% trans "Вы успешно вышли" %}
+                </h2>
+                <p class="text-muted mb-4">
+                  {% trans "Время выхода зарегистрировано" %}
+                </p>
+              {% else %}
+                <h2 class="h3 fw-bold text-success mb-3">
+                  {% trans "Вы успешно вошли" %}
+                </h2>
+                <p class="text-muted mb-4">
+                  {% trans "Время входа зарегистрировано" %}
+                </p>
+              {% endif %}
+            </div>
 
-    <p class="text-muted mt-3">
-      {% trans "Отпечаток устройства:" %} <code>{{ fingerprint.fingerprint_hash }}</code>
-    </p>
+            <!-- Time Info -->
+            <div class="bg-light rounded-3 p-4 mb-4">
+              <div class="row g-3">
+                <!-- Время входа (всегда показываем если есть) -->
+                {% if attendance.arrived_at %}
+                  <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <i class="bi-box-arrow-in-right text-success me-2"></i>
+                        <span class="fw-medium">{% trans "Время входа:" %}</span>
+                      </div>
+                      <span class="badge bg-success fs-6">
+                        {{ attendance.arrived_at|date:"d.m.Y H:i" }}
+                      </span>
+                    </div>
+                  </div>
+                {% endif %}
+                
+                <!-- Время выхода (показываем только если это выход И есть время выхода) -->
+                {% if is_exit and attendance.left_at %}
+                  <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <i class="bi-box-arrow-right text-success me-2"></i>
+                        <span class="fw-medium">{% trans "Время выхода:" %}</span>
+                      </div>
+                      <span class="badge bg-success fs-6">
+                        {{ attendance.left_at|date:"d.m.Y H:i" }}
+                      </span>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
 
-    <a href="/" class="btn btn-outline-secondary mt-4">
-      {% trans "Вернуться на главную" %}
-    </a>
+            <!-- Status Info -->
+            {% if status %}
+              <div class="bg-light rounded-3 p-4 mb-4">
+                <div class="d-flex align-items-center">
+                  <i class="bi-info-circle me-2"></i>
+                  <div class="flex-grow-1 text-start">
+                    <strong>Статус:</strong>
+                    <div class="mt-1">
+                      {% if status == 'on_time' %}
+                        <span class="badge bg-success">Вовремя</span>
+                      {% elif status == 'too_early' %}
+                        <span class="badge bg-warning">Рано</span>
+                      {% elif status == 'too_late' %}
+                        <span class="badge bg-danger">Опоздал</span>
+                      {% elif status == 'by_trainer' %}
+                        <span class="badge bg-info">Вручную</span>
+                      {% elif status == 'unknown' %}
+                        <span class="badge bg-secondary">Неизвестно</span>
+                      {% else %}
+                        <span class="badge bg-secondary">{{ status }}</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            <!-- Security Info -->
+            {% if attendance.fingerprint_hash %}
+              <div class="mb-4">
+                <small class="text-muted d-block mb-1">
+                  <i class="bi-fingerprint me-1"></i>
+                  {% trans "Отпечаток устройства:" %}
+                </small>
+                <code class="small bg-dark text-light px-2 py-1 rounded">
+                  {{ attendance.fingerprint_hash|truncatechars:20 }}
+                </code>
+              </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+              <a href="/" class="btn btn-primary btn-lg rounded-pill">
+                <i class="bi-house-door me-2"></i>
+                {% trans "Вернуться на главную" %}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
+
+<!-- Confetti Animation -->
+<div id="confetti-container"></div>
+
+<script>
+  // Success animation
+  document.addEventListener('DOMContentLoaded', function() {
+    const successIcon = document.getElementById('success-icon');
+    
+    // Pulse animation for success icon
+    successIcon.style.animation = 'pulse 1s ease-in-out';
+    
+    // Create confetti effect
+    createConfetti();
+  });
+
+  function createConfetti() {
+    const container = document.getElementById('confetti-container');
+    const colors = ['#28a745', '#20c997', '#17a2b8', '#ffc107', '#fd7e14'];
+    
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.cssText = `
+        position: fixed;
+        width: 8px;
+        height: 8px;
+        background-color: ${colors[Math.floor(Math.random() * colors.length)]};
+        left: ${Math.random() * 100}vw;
+        top: -10px;
+        border-radius: 50%;
+        animation: fall ${Math.random() * 2 + 2}s linear infinite;
+        animation-delay: ${Math.random() * 2}s;
+        z-index: 1000;
+      `;
+      container.appendChild(confetti);
+    }
+    
+    // Remove confetti after animation
+    setTimeout(() => {
+      container.innerHTML = '';
+    }, 5000);
+  }
+</script>
+
+<style>
+  .card {
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .badge {
+    font-size: 0.9rem;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  
+  @keyframes fall {
+    0% {
+      transform: translateY(-100vh) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+  
+  .card {
+    animation: fadeInUp 0.5s ease;
+  }
+  
+  .confetti {
+    pointer-events: none;
+  }
+  
+  @media print {
+    .btn, .alert {
+      display: none !important;
+    }
+    
+    .card {
+      box-shadow: none !important;
+      border: 1px solid #000 !important;
+    }
+  }
+</style>
 {% endblock %}

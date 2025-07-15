@@ -18,18 +18,31 @@ def mark_qr_page(request, token):
 
     user_agent = request.headers.get("User-Agent", "")
 
-    success, result, status = mark_attendance(
-        profile=profile,
-        token=token,
-        fingerprint_hash=fingerprint_hash,
-        user_agent=user_agent,
-        mode='entry',
-    )
+    try:
+        success, result, status = mark_attendance(
+            profile=profile,
+            token=token,
+            fingerprint_hash=fingerprint_hash,
+            user_agent=user_agent,
+            mode='entry',
+        )
 
-    if success:
-        return render(request, "qr/mark_success.html", {"attendance": result, "status": status})
-    else:
-        return render(request, "qr/mark_invalid.html", {"reason": _(result), "status": status})
+        if success == "already_marked":
+            return render(request, "qr/mark_already.html", {"attendance": result, "status": status})
+        elif success:
+            return render(request, "qr/mark_success.html", {"attendance": result, "status": status})
+        else:
+            return render(request, "qr/mark_invalid.html", {"reason": result, "status": status})
+    except Exception as e:
+        # Логируем ошибку для отладки
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in mark_qr_page: {str(e)}")
+        
+        return render(request, "qr/mark_invalid.html", {
+            "reason": _("Произошла техническая ошибка. Пожалуйста, попробуйте еще раз или обратитесь к администратору."),
+            "status": None
+        })
 
 
 @sso_login_required
@@ -45,22 +58,35 @@ def mark_qr_exit_page(request, token):
 
     user_agent = request.headers.get("User-Agent", "")
 
-    success, result, status = mark_attendance(
-        profile=profile,
-        token=token,
-        fingerprint_hash=fingerprint_hash,
-        user_agent=user_agent,
-        mode='exit',
-    )
+    try:
+        success, result, status = mark_attendance(
+            profile=profile,
+            token=token,
+            fingerprint_hash=fingerprint_hash,
+            user_agent=user_agent,
+            mode='exit',
+        )
 
-    if success:
-        return render(request, "qr/mark_success.html", {
-            "attendance": result,
-            "is_exit": True,
-            "status": status,
+        if success == "already_marked":
+            return render(request, "qr/mark_already.html", {"attendance": result, "status": status})
+        elif success:
+            return render(request, "qr/mark_success.html", {
+                "attendance": result,
+                "is_exit": True,
+                "status": status,
+            })
+        else:
+            return render(request, "qr/mark_invalid.html", {"reason": result, "status": status})
+    except Exception as e:
+        # Логируем ошибку для отладки
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in mark_qr_exit_page: {str(e)}")
+        
+        return render(request, "qr/mark_invalid.html", {
+            "reason": _("Произошла техническая ошибка. Пожалуйста, попробуйте еще раз или обратитесь к администратору."),
+            "status": None
         })
-    else:
-        return render(request, "qr/mark_invalid.html", {"reason": _(result), "status": status})
 
 @sso_login_required
 def qr_scan_page(request):

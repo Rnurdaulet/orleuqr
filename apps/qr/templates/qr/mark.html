@@ -1,26 +1,169 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <title>Отметка посещения</title>
-  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-</head>
-<body>
-  <p>Пожалуйста, подождите... Определяем данные устройства.</p>
+{% extends "base.html" %}
+{% load static %}
 
-  <script>
-    async function markAttendance() {
-      const url = new URL(window.location.href);
+{% block title %}Загрузка - QR Система{% endblock %}
 
+{% block content %}
+<div class="container-fluid bg-light min-vh-100 d-flex align-items-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-3">
+          <div class="card-body p-5 text-center">
+            <!-- Loading Icon -->
+            <div class="mb-4">
+              <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle mb-3" style="width: 80px; height: 80px;">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+              <h2 class="h3 fw-bold text-primary mb-3">
+                Подготовка к отметке
+              </h2>
+              <p class="text-muted mb-4">
+                Определяем данные устройства для безопасной аутентификации
+              </p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-4">
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progress-bar"></div>
+              </div>
+              <small class="text-muted mt-2 d-block" id="progress-text">
+                Инициализация...
+              </small>
+            </div>
+
+            <!-- Security Info -->
+            <div class="bg-light rounded-3 p-4 mb-4">
+              <h6 class="fw-bold mb-3">
+                <i class="bi-shield-check text-success me-2"></i>
+                Безопасность данных
+              </h6>
+              <ul class="list-unstyled mb-0 text-start small">
+                <li class="mb-2">
+                  <i class="bi-check2 text-success me-2"></i>
+                  Данные обрабатываются локально
+                </li>
+                <li class="mb-2">
+                  <i class="bi-check2 text-success me-2"></i>
+                  Создается уникальный отпечаток устройства
+                </li>
+                <li class="mb-0">
+                  <i class="bi-check2 text-success me-2"></i>
+                  Личная информация не передается
+                </li>
+              </ul>
+            </div>
+
+            <!-- Status Message -->
+            <div class="alert alert-info border-0 rounded-3" role="alert">
+              <div class="d-flex align-items-center">
+                <i class="bi-info-circle me-2"></i>
+                <div class="flex-grow-1 text-start">
+                  <strong>Пожалуйста, подождите...</strong>
+                  <div class="mt-1 small">Процесс займет несколько секунд</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+<script>
+  async function markAttendance() {
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    
+    // Simulate progress steps
+    const steps = [
+      { progress: 20, text: 'Загрузка библиотеки...' },
+      { progress: 40, text: 'Анализ браузера...' },
+      { progress: 60, text: 'Создание отпечатка...' },
+      { progress: 80, text: 'Проверка данных...' },
+      { progress: 100, text: 'Завершение...' }
+    ];
+    
+    for (let step of steps) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      progressBar.style.width = step.progress + '%';
+      progressText.textContent = step.text;
+    }
+    
+    try {
       const fp = await FingerprintJS.load();
       const result = await fp.get();
       const fingerprint = result.visitorId;
 
+      const url = new URL(window.location.href);
       url.searchParams.set("fp", fingerprint);
+      
+      progressText.textContent = 'Переходим к отметке...';
+      
+      // Small delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       window.location.href = url.toString();
+    } catch (error) {
+      progressText.textContent = 'Ошибка загрузки. Попробуйте перезагрузить страницу.';
+      progressBar.classList.add('bg-danger');
+      
+      // Show retry button after 2 seconds
+      setTimeout(() => {
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'btn btn-outline-primary mt-3';
+        retryBtn.innerHTML = '<i class="bi-arrow-clockwise me-2"></i>Попробовать снова';
+        retryBtn.onclick = () => location.reload();
+        document.querySelector('.card-body').appendChild(retryBtn);
+      }, 2000);
     }
+  }
 
-    markAttendance();
-  </script>
-</body>
-</html>
+  // Start the process
+  markAttendance();
+</script>
+
+<style>
+  .card {
+    transition: all 0.3s ease;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .card {
+    animation: fadeInUp 0.5s ease;
+  }
+  
+  .progress {
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .progress-bar {
+    transition: width 0.3s ease;
+  }
+  
+  .spinner-border {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+{% endblock %}

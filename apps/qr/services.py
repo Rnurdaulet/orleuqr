@@ -7,11 +7,16 @@ from apps.attendance.models import Attendance, TrustLog
 from apps.attendance.utils import check_fingerprint_usage_conflicts
 
 
-def _get_session_by_token(token: str, mode: str) -> Session:
-    if mode == 'entry':
-        return get_object_or_404(Session, qr_token_entry=token)
-    else:
-        return get_object_or_404(Session, qr_token_exit=token)
+def _get_session_by_token(token: str, mode: str):
+    """Получить сессию по токену. Возвращает (session, error_message)"""
+    try:
+        if mode == 'entry':
+            session = Session.objects.get(qr_token_entry=token)
+        else:
+            session = Session.objects.get(qr_token_exit=token)
+        return session, None
+    except Session.DoesNotExist:
+        return None, _("QR-код недействителен или сессия не найдена. Возможно, код устарел или был удален.")
 
 
 def _validate_session_time(session: Session, current_time, mode: str, use_time_limits: bool):
@@ -47,7 +52,10 @@ def _calculate_time_status(event_time, start, end):
 
 
 def mark_attendance(profile: PersonProfile, token: str, fingerprint_hash: str, user_agent: str, mode: str = 'entry'):
-    session = _get_session_by_token(token, mode)
+    session, session_error = _get_session_by_token(token, mode)
+    if session_error:
+        return False, session_error, None
+    
     current_time = localtime().time()
     use_time_limits = getattr(session.group, 'use_time_limits', False)
 
@@ -77,7 +85,7 @@ def mark_attendance(profile: PersonProfile, token: str, fingerprint_hash: str, u
 
     if mode == 'entry':
         if attendance:
-            return False, _("Вы уже отмечались на вход."), attendance.arrived_status
+            return "already_marked", attendance, attendance.arrived_status
 
         arrived_status = status
         if not use_time_limits:
@@ -99,7 +107,7 @@ def mark_attendance(profile: PersonProfile, token: str, fingerprint_hash: str, u
             return False, _("Отметка входа не найдена — нельзя отметить выход."), attendance.left_status if attendance else None
 
         if attendance.left_at:
-            return False, _("Вы уже отмечались на выход."), attendance.left_status
+            return "already_marked", attendance, attendance.left_status
 
         left_status = status
         if not use_time_limits:

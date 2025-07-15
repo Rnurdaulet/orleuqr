@@ -1,39 +1,124 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block title %}Уже отмечен - QR Система{% endblock %}
+
 {% block content %}
-  <div class="container py-5 text-center">
-    <h1 class="display-4 text-warning">
-      ⚠️ {% trans "Вы уже отмечены" %}
-    </h1>
+<div class="container-fluid bg-light min-vh-100 d-flex align-items-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-3">
+          <div class="card-body p-5 text-center">
+            <!-- Status Icon -->
+            <div class="mb-4">
+              <div class="d-inline-flex align-items-center justify-content-center bg-info bg-opacity-10 rounded-circle mb-3" style="width: 80px; height: 80px;">
+                <i class="bi-info-circle-fill text-info" style="font-size: 2.5rem;"></i>
+              </div>
+              <h2 class="h3 fw-bold text-info mb-3">
+                {% trans "Вы уже отмечены" %}
+              </h2>
+              <p class="text-muted mb-4">
+                {% trans "Ваше посещение уже зарегистрировано в системе" %}
+              </p>
+            </div>
 
-    <div class="lead mt-4">
-      <p>
-        {% trans "Время прихода:" %}
-        <strong>{{ attendance.arrived_at|date:"d.m.Y H:i" }}</strong>
-      </p>
+            <!-- Attendance Info -->
+            <div class="bg-light rounded-3 p-4 mb-4">
+              <div class="row g-3">
+                <div class="col-12">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                      <i class="bi-box-arrow-in-right text-info me-2"></i>
+                      <span class="fw-medium">{% trans "Время прихода:" %}</span>
+                    </div>
+                    <span class="badge bg-info">
+                      {{ attendance.arrived_at|date:"d.m.Y H:i" }}
+                    </span>
+                  </div>
+                </div>
 
-      {% if attendance.left_at %}
-        <p>
-          {% trans "Время ухода:" %}
-          <strong>{{ attendance.left_at|date:"d.m.Y H:i" }}</strong>
-        </p>
-      {% else %}
-        <p class="text-muted">
-          {% trans "Уход ещё не зафиксирован." %}
-        </p>
-      {% endif %}
+                {% if attendance.left_at %}
+                  <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <i class="bi-box-arrow-right text-info me-2"></i>
+                        <span class="fw-medium">{% trans "Время ухода:" %}</span>
+                      </div>
+                      <span class="badge bg-info">
+                        {{ attendance.left_at|date:"d.m.Y H:i" }}
+                      </span>
+                    </div>
+                  </div>
+                {% else %}
+                  <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <i class="bi-clock text-muted me-2"></i>
+                        <span class="fw-medium text-muted">{% trans "Уход:" %}</span>
+                      </div>
+                      <span class="badge bg-secondary">
+                        {% trans "Не зафиксирован" %}
+                      </span>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Fingerprint Info -->
+            {% if attendance.fingerprint_hash %}
+              <div class="mb-4">
+                <small class="text-muted d-block mb-1">
+                  <i class="bi-fingerprint me-1"></i>
+                  {% trans "Отпечаток устройства:" %}
+                </small>
+                <code class="small bg-dark text-light px-2 py-1 rounded">
+                  {{ attendance.fingerprint_hash|truncatechars:20 }}
+                </code>
+              </div>
+            {% endif %}
+
+            <!-- Action Button -->
+            <div class="d-grid">
+              <a href="/" class="btn btn-primary btn-lg rounded-pill">
+                <i class="bi-house-door me-2"></i>
+                {% trans "Вернуться на главную" %}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
-    {% if fingerprint %}
-      <p class="text-muted mt-3">
-        {% trans "Отпечаток устройства:" %}
-        <code>{{ fingerprint.fingerprint_hash }}</code>
-      </p>
-    {% endif %}
-
-    <a href="/" class="btn btn-outline-secondary mt-4">
-      {% trans "Вернуться на главную" %}
-    </a>
   </div>
+</div>
+
+<style>
+  .card {
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .badge {
+    font-size: 0.85rem;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .card {
+    animation: fadeInUp 0.5s ease;
+  }
+</style>
 {% endblock %}
