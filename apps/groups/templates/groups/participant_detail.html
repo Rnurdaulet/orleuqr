@@ -233,12 +233,12 @@
             <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="participant-table" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table" data-hs-datatables-options='{
-                         "pageLength": 12,
-                         "lengthMenu": [10, 12, 15, 20, 25],
+                         "pageLength": 100,
+                         "lengthMenu": [10, 12, 15, 20, 25, 50, 100],
                          "search": "#datatableSearch",
                          "entries": "#datatableEntries",
                          "isResponsive": false,
-                         "isShowPaging": false,
+                         "isShowPaging": true,
                          "pagination": "datatablePagination",
                          "info": {
                            "totalQty": "#datatableWithPaginationInfoTotalQty"
@@ -416,10 +416,12 @@
                                         "hideSearch": true
                                       }'>
                                     <option value="10">10</option>
-                                    <option value="12" selected>12</option>
+                                    <option value="12">12</option>
                                     <option value="15">15</option>
                                     <option value="20">20</option>
                                     <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100" selected>100</option>
                                 </select>
                             </div>
                             <!-- End Select -->
