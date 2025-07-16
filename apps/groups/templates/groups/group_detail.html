@@ -384,6 +384,8 @@
     <script src="{% static 'main/assets/vendor/jszip/dist/jszip.min.js' %}"></script>
     <script src="{% static 'main/assets/vendor/pdfmake/build/pdfmake.min.js' %}"></script>
     <script src="{% static 'main/assets/vendor/pdfmake/build/vfs_fonts.js' %}"></script>
+    <!-- SheetJS для создания Excel файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 
     <script>
@@ -679,89 +681,119 @@
     function exportToExcel() {
         const exportData = prepareExportData();
         
-        // Создаем HTML таблицу с объединением ячеек
-        let htmlContent = `
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Посещаемость группы: {{ group.code|escapejs }}</title>
-    <style>
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: center; }
-        .participant { text-align: left; }
-        .on-time { background-color: #d1edff; color: #0d6efd; }
-        .too-late { background-color: #fff3cd; color: #664d03; }
-        .too-early { background-color: #cff4fc; color: #055160; }
-        .unknown { background-color: #f8f9fa; color: #6c757d; }
-        .manual { background-color: #e7f3ff; color: #0c5aa6; }
-    </style>
-</head>
-<body>
-    <h1 style="text-align: center;">Посещаемость группы: {{ group.code|escapejs }}</h1>
-    <table>
-        <thead>
-            <tr>`;
+        // Создаем новую книгу Excel
+        const workbook = XLSX.utils.book_new();
         
-        // Первая строка заголовков с объединением ячеек
-        exportData.topHeaders.forEach((header, index) => {
-            if (index === 0) {
-                htmlContent += `<th rowspan="2" style="background-color: #f8f9fa; font-weight: bold;">${header}</th>`;
-            } else if (header !== '') {
-                htmlContent += `<th colspan="2" style="background-color: #f8f9fa; font-weight: bold;">${header}</th>`;
-            }
-        });
+        // Подготавливаем данные для листа
+        const worksheetData = [];
         
-        htmlContent += '</tr><tr>';
+        // Добавляем первую строку заголовков (даты)
+        worksheetData.push(exportData.topHeaders);
         
-        // Вторая строка заголовков (только вход/выход)
-        exportData.subHeaders.forEach((header, index) => {
-            if (index > 0) { // Пропускаем первую пустую ячейку для участника
-                htmlContent += `<th style="background-color: #e9ecef; font-weight: bold;">${header}</th>`;
-            }
-        });
+        // Добавляем вторую строку заголовков (вход/выход)
+        worksheetData.push(exportData.subHeaders);
         
-        htmlContent += '</tr></thead><tbody>';
-        
-        // Строки данных
+        // Добавляем строки данных
         exportData.rows.forEach(row => {
-            htmlContent += '<tr>';
-            row.forEach((cell, index) => {
-                let className = '';
-                let cellText = cell.text;
-                
-                if (index === 0) {
-                    className = 'participant';
-                } else {
-                    // Определяем CSS класс по цвету
-                    if (cell.fillColor === '#d1edff') className = 'on-time';
-                    else if (cell.fillColor === '#fff3cd') className = 'too-late';
-                    else if (cell.fillColor === '#cff4fc') className = 'too-early';
-                    else if (cell.fillColor === '#e7f3ff') className = 'manual';
-                    else if (cell.fillColor === '#f8f9fa') className = 'unknown';
-                }
-                
-                htmlContent += `<td class="${className}">${cellText}</td>`;
-            });
-            htmlContent += '</tr>';
+            const rowData = row.map(cell => cell.text);
+            worksheetData.push(rowData);
         });
         
-        htmlContent += `
-        </tbody>
-    </table>
-</body>
-</html>`;
-
-        // Создаем blob и скачиваем
-        const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        // Создаем лист из данных
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
         
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Посещаемость_{{ group.code|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.xls';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+        // Настраиваем объединение ячеек
+        const merges = [];
+        
+        // Объединяем ячейку "Участник" (A1:A2)
+        merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
+        
+        // Объединяем даты (каждая дата занимает 2 колонки)
+        let colIndex = 1;
+        exportData.topHeaders.forEach((header, index) => {
+            if (index > 0 && header !== '') {
+                // Объединяем заголовок даты на 2 колонки
+                merges.push({ s: { r: 0, c: colIndex }, e: { r: 0, c: colIndex + 1 } });
+                colIndex += 2;
+            }
+        });
+        
+        worksheet['!merges'] = merges;
+        
+        // Устанавливаем ширину колонок
+        const columnWidths = [{ wch: 20 }]; // Участник
+        for (let i = 1; i < exportData.subHeaders.length; i++) {
+            columnWidths.push({ wch: 12 }); // Колонки времени
+        }
+        worksheet['!cols'] = columnWidths;
+        
+        // Применяем стили к заголовкам
+        const headerStyle = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "F8F9FA" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thin" },
+                bottom: { style: "thin" },
+                left: { style: "thin" },
+                right: { style: "thin" }
+            }
+        };
+        
+        const subHeaderStyle = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "E9ECEF" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thin" },
+                bottom: { style: "thin" },
+                left: { style: "thin" },
+                right: { style: "thin" }
+            }
+        };
+        
+        // Применяем стили к ячейкам заголовков
+        for (let col = 0; col < exportData.topHeaders.length; col++) {
+            const cellAddress1 = XLSX.utils.encode_cell({ r: 0, c: col });
+            const cellAddress2 = XLSX.utils.encode_cell({ r: 1, c: col });
+            
+            if (worksheet[cellAddress1]) worksheet[cellAddress1].s = headerStyle;
+            if (worksheet[cellAddress2]) worksheet[cellAddress2].s = subHeaderStyle;
+        }
+        
+        // Применяем цветовое кодирование к данным
+        exportData.rows.forEach((row, rowIndex) => {
+            row.forEach((cell, colIndex) => {
+                const cellAddress = XLSX.utils.encode_cell({ r: rowIndex + 2, c: colIndex });
+                if (worksheet[cellAddress]) {
+                    let fillColor = null;
+                    
+                    if (cell.fillColor === '#d1edff') fillColor = "D1EDFF"; // Вовремя
+                    else if (cell.fillColor === '#fff3cd') fillColor = "FFF3CD"; // Опоздал
+                    else if (cell.fillColor === '#cff4fc') fillColor = "CFF4FC"; // Рано
+                    else if (cell.fillColor === '#e7f3ff') fillColor = "E7F3FF"; // Ручная отметка
+                    else if (cell.fillColor === '#f8f9fa') fillColor = "F8F9FA"; // Неизвестно
+                    
+                    worksheet[cellAddress].s = {
+                        alignment: { horizontal: colIndex === 0 ? "left" : "center" },
+                        border: {
+                            top: { style: "thin" },
+                            bottom: { style: "thin" },
+                            left: { style: "thin" },
+                            right: { style: "thin" }
+                        },
+                        fill: fillColor ? { fgColor: { rgb: fillColor } } : undefined
+                    };
+                }
+            });
+        });
+        
+        // Добавляем лист в книгу
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Посещаемость");
+        
+        // Сохраняем файл
+        const fileName = 'Посещаемость_{{ group.code|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+        XLSX.writeFile(workbook, fileName);
     }
 
     function exportToPDF() {
