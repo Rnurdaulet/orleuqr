@@ -385,7 +385,7 @@
     <script src="{% static 'main/assets/vendor/pdfmake/build/pdfmake.min.js' %}"></script>
     <script src="{% static 'main/assets/vendor/pdfmake/build/vfs_fonts.js' %}"></script>
     <!-- SheetJS для создания Excel файлов -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 
 
     <script>
@@ -678,122 +678,221 @@
     }
 
     // Функции экспорта
-    function exportToExcel() {
+    async function exportToExcel() {
         const exportData = prepareExportData();
         
-        // Создаем новую книгу Excel
-        const workbook = XLSX.utils.book_new();
+        // Создаем новую книгу Excel с использованием ExcelJS
+        const workbook = new ExcelJS.Workbook();
         
-        // Подготавливаем данные для листа
-        const worksheetData = [];
+        // Создаем лист для данных
+        const worksheet = workbook.addWorksheet('Посещаемость');
         
         // Добавляем первую строку заголовков (даты)
-        worksheetData.push(exportData.topHeaders);
+        worksheet.addRow(exportData.topHeaders);
         
         // Добавляем вторую строку заголовков (вход/выход)
-        worksheetData.push(exportData.subHeaders);
+        worksheet.addRow(exportData.subHeaders);
         
-        // Добавляем строки данных
+        // Добавляем данные
         exportData.rows.forEach(row => {
             const rowData = row.map(cell => cell.text);
-            worksheetData.push(rowData);
+            worksheet.addRow(rowData);
         });
         
-        // Создаем лист из данных
-        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-        
         // Настраиваем объединение ячеек
-        const merges = [];
-        
         // Объединяем ячейку "Участник" (A1:A2)
-        merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
+        worksheet.mergeCells('A1:A2');
         
         // Объединяем даты (каждая дата занимает 2 колонки)
-        let colIndex = 1;
+        let colIndex = 2; // Начинаем с колонки B (2)
         exportData.topHeaders.forEach((header, index) => {
             if (index > 0 && header !== '') {
-                // Объединяем заголовок даты на 2 колонки
-                merges.push({ s: { r: 0, c: colIndex }, e: { r: 0, c: colIndex + 1 } });
+                const startCol = String.fromCharCode(64 + colIndex);
+                const endCol = String.fromCharCode(64 + colIndex + 1);
+                worksheet.mergeCells(`${startCol}1:${endCol}1`);
                 colIndex += 2;
             }
         });
         
-        worksheet['!merges'] = merges;
-        
         // Устанавливаем ширину колонок
-        const columnWidths = [{ wch: 20 }]; // Участник
-        for (let i = 1; i < exportData.subHeaders.length; i++) {
-            columnWidths.push({ wch: 12 }); // Колонки времени
+        worksheet.getColumn(1).width = 25; // Участник
+        for (let i = 2; i <= exportData.subHeaders.length; i++) {
+            worksheet.getColumn(i).width = 12; // Колонки времени
         }
-        worksheet['!cols'] = columnWidths;
         
-        // Применяем стили к заголовкам
+        // Стили для заголовков
         const headerStyle = {
             font: { bold: true },
-            fill: { fgColor: { rgb: "F8F9FA" } },
-            alignment: { horizontal: "center", vertical: "center" },
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FA' } },
+            alignment: { horizontal: 'center', vertical: 'middle' },
             border: {
-                top: { style: "thin" },
-                bottom: { style: "thin" },
-                left: { style: "thin" },
-                right: { style: "thin" }
+                top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
             }
         };
         
         const subHeaderStyle = {
             font: { bold: true },
-            fill: { fgColor: { rgb: "E9ECEF" } },
-            alignment: { horizontal: "center", vertical: "center" },
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE9ECEF' } },
+            alignment: { horizontal: 'center', vertical: 'middle' },
             border: {
-                top: { style: "thin" },
-                bottom: { style: "thin" },
-                left: { style: "thin" },
-                right: { style: "thin" }
+                top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
             }
         };
         
-        // Применяем стили к ячейкам заголовков
-        for (let col = 0; col < exportData.topHeaders.length; col++) {
-            const cellAddress1 = XLSX.utils.encode_cell({ r: 0, c: col });
-            const cellAddress2 = XLSX.utils.encode_cell({ r: 1, c: col });
-            
-            if (worksheet[cellAddress1]) worksheet[cellAddress1].s = headerStyle;
-            if (worksheet[cellAddress2]) worksheet[cellAddress2].s = subHeaderStyle;
-        }
+        // Применяем стили к заголовкам
+        worksheet.getRow(1).eachCell((cell) => {
+            cell.style = headerStyle;
+        });
+        
+        worksheet.getRow(2).eachCell((cell) => {
+            cell.style = subHeaderStyle;
+        });
         
         // Применяем цветовое кодирование к данным
         exportData.rows.forEach((row, rowIndex) => {
+            const excelRowIndex = rowIndex + 3; // +3 потому что 1-2 строки заголовки
+            
             row.forEach((cell, colIndex) => {
-                const cellAddress = XLSX.utils.encode_cell({ r: rowIndex + 2, c: colIndex });
-                if (worksheet[cellAddress]) {
-                    let fillColor = null;
-                    
-                    if (cell.fillColor === '#d1edff') fillColor = "D1EDFF"; // Вовремя
-                    else if (cell.fillColor === '#fff3cd') fillColor = "FFF3CD"; // Опоздал
-                    else if (cell.fillColor === '#cff4fc') fillColor = "CFF4FC"; // Рано
-                    else if (cell.fillColor === '#e7f3ff') fillColor = "E7F3FF"; // Ручная отметка
-                    else if (cell.fillColor === '#f8f9fa') fillColor = "F8F9FA"; // Неизвестно
-                    
-                    worksheet[cellAddress].s = {
-                        alignment: { horizontal: colIndex === 0 ? "left" : "center" },
-                        border: {
-                            top: { style: "thin" },
-                            bottom: { style: "thin" },
-                            left: { style: "thin" },
-                            right: { style: "thin" }
-                        },
-                        fill: fillColor ? { fgColor: { rgb: fillColor } } : undefined
+                const excelCell = worksheet.getCell(excelRowIndex, colIndex + 1);
+                
+                let fillColor = null;
+                
+                // Применяем цвета только к ячейкам со временем (не к участникам и не к пустым)
+                if (colIndex > 0 && cell.text !== '--') {
+                    if (cell.fillColor === '#d1edff') fillColor = 'FFD1EDFF'; // Вовремя - светло-синий
+                    else if (cell.fillColor === '#fff3cd') fillColor = 'FFFFF3CD'; // Опоздал - светло-желтый
+                    else if (cell.fillColor === '#cff4fc') fillColor = 'FFCFF4FC'; // Рано - светло-голубой
+                    else if (cell.fillColor === '#e7f3ff') fillColor = 'FFE7F3FF'; // Ручная отметка - голубой
+                    else if (cell.fillColor === '#f8f9fa') fillColor = 'FFF8F9FA'; // Неизвестно - серый
+                }
+                
+                // Базовый стиль для всех ячеек данных
+                const cellStyle = {
+                    alignment: { 
+                        horizontal: colIndex === 0 ? 'left' : 'center', 
+                        vertical: 'middle' 
+                    },
+                    border: {
+                        top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                        bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                        right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+                    }
+                };
+                
+                // Добавляем заливку если есть цвет
+                if (fillColor) {
+                    cellStyle.fill = { 
+                        type: 'pattern', 
+                        pattern: 'solid', 
+                        fgColor: { argb: fillColor } 
+                    };
+                } else if (colIndex === 0) {
+                    // Белый фон для участников
+                    cellStyle.fill = { 
+                        type: 'pattern', 
+                        pattern: 'solid', 
+                        fgColor: { argb: 'FFFFFFFF' } 
                     };
                 }
+                
+                excelCell.style = cellStyle;
             });
         });
         
-        // Добавляем лист в книгу
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Посещаемость");
+        // Создаем лист с легендой
+        const legendSheet = workbook.addWorksheet('Легенда');
+        
+        // Данные для легенды
+        legendSheet.addRow(['ЛЕГЕНДА ЦВЕТОВ']);
+        legendSheet.addRow([]);
+        legendSheet.addRow(['Цвет', 'Значение', 'Описание']);
+        legendSheet.addRow(['■ Образец', 'Вовремя', 'Участник пришел в установленное время']);
+        legendSheet.addRow(['■ Образец', 'Опоздал', 'Участник пришел с опозданием']);
+        legendSheet.addRow(['■ Образец', 'Рано', 'Участник пришел слишком рано']);
+        legendSheet.addRow(['■ Образец', 'Ручная отметка', 'Участник отмечен тренером вручную']);
+        legendSheet.addRow(['■ Образец', 'Неизвестно', 'Статус не определен']);
+        
+        // Объединяем заголовок легенды
+        legendSheet.mergeCells('A1:C1');
+        
+        // Стили для легенды
+        const legendTitleStyle = {
+            font: { bold: true, size: 14 },
+            alignment: { horizontal: 'center', vertical: 'middle' }
+        };
+        
+        const legendHeaderStyle = {
+            font: { bold: true },
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FA' } },
+            alignment: { horizontal: 'center', vertical: 'middle' },
+            border: {
+                top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+            }
+        };
+        
+        // Применяем стили к заголовку легенды
+        legendSheet.getCell('A1').style = legendTitleStyle;
+        
+        // Применяем стили к заголовкам колонок легенды
+        legendSheet.getRow(3).eachCell((cell) => {
+            cell.style = legendHeaderStyle;
+        });
+        
+        // Цветовые примеры в легенде
+        const legendColors = [
+            { row: 4, color: 'FFD1EDFF' }, // Вовремя
+            { row: 5, color: 'FFFFF3CD' }, // Опоздал
+            { row: 6, color: 'FFCFF4FC' }, // Рано
+            { row: 7, color: 'FFE7F3FF' }, // Ручная отметка
+            { row: 8, color: 'FFF8F9FA' }  // Неизвестно
+        ];
+        
+        legendColors.forEach(({ row, color }) => {
+            const cell = legendSheet.getCell(`A${row}`);
+            cell.style = {
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: color } },
+                font: { bold: true, color: { argb: 'FF000000' } },
+                alignment: { horizontal: 'center', vertical: 'middle' },
+                border: {
+                    top: { style: 'medium', color: { argb: 'FF666666' } },
+                    bottom: { style: 'medium', color: { argb: 'FF666666' } },
+                    left: { style: 'medium', color: { argb: 'FF666666' } },
+                    right: { style: 'medium', color: { argb: 'FF666666' } }
+                }
+            };
+        });
+        
+        // Устанавливаем ширину колонок для легенды
+        legendSheet.getColumn(1).width = 15; // Цвет
+        legendSheet.getColumn(2).width = 20; // Значение
+        legendSheet.getColumn(3).width = 40; // Описание
         
         // Сохраняем файл
         const fileName = 'Посещаемость_{{ group.code|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.xlsx';
-        XLSX.writeFile(workbook, fileName);
+        
+        // Генерируем буфер и создаем blob для скачивания
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        // Создаем ссылку для скачивания
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
     }
 
     function exportToPDF() {
