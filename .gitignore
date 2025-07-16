@@ -6,6 +6,7 @@ __pycache__
 db.sqlite3
 /media
 uimports
+/logs
 # Игнорировать миграции
 apps/*/migrations/*.py
 !apps/*/migrations/__init__.py

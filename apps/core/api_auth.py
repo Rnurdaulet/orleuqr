@@ -49,13 +49,12 @@ class APITokenMiddleware(MiddlewareMixin):
         # Проверяем путь - для API эндпоинтов
         api_paths = ['/api/', '/webhook/']
         
-        # Или проверяем заголовок Content-Type для JSON
-        content_type = request.META.get('CONTENT_TYPE', '')
+        # Проверяем наличие Bearer токена в заголовке
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         
         return (
             any(request.path.startswith(path) for path in api_paths) or
-            'application/json' in content_type or
-            request.META.get('HTTP_AUTHORIZATION', '').startswith('Bearer ')
+            auth_header.startswith('Bearer ')
         )
     
     def _extract_token(self, auth_header):
