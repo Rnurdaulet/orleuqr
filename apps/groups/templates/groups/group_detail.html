@@ -483,18 +483,8 @@
                     extend: 'excel',
                     className: 'btn btn-outline-secondary me-2',
                     text: '<i class="bi-file-earmark-excel me-1"></i> Excel',
-                    exportOptions: {
-                        columns: ':visible',
-                        format: {
-                            body: function(data, row, column, node) {
-                                // Для первой колонки (участники) используем data-export атрибут
-                                if (column === 0) {
-                                    return $(node).attr('data-export') || data;
-                                }
-                                // Для остальных колонок преобразуем HTML в текст
-                                return convertHtmlToText(data);
-                            }
-                        }
+                    action: function(e, dt, button, config) {
+                        exportToExcel();
                     }
                 },
                 {
@@ -504,18 +494,8 @@
                     title: 'Посещаемость группы: {{ group.code|escapejs }}',
                     orientation: 'landscape',
                     pageSize: 'A4',
-                    exportOptions: {
-                        columns: ':visible',
-                        format: {
-                            body: function(data, row, column, node) {
-                                // Для первой колонки (участники) используем data-export атрибут
-                                if (column === 0) {
-                                    return $(node).attr('data-export') || data;
-                                }
-                                // Для остальных колонок преобразуем HTML в текст
-                                return convertHtmlToText(data);
-                            }
-                        }
+                    action: function(e, dt, button, config) {
+                        exportToPDF();
                     }
                 }
             ],
@@ -695,6 +675,266 @@
         updateColumnsBadge();
     }
 
+    // Функции экспорта
+    function exportToExcel() {
+        const exportData = prepareExportData();
+        
+        // Создаем HTML таблицу с объединением ячеек
+        let htmlContent = `
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Посещаемость группы: {{ group.code|escapejs }}</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: center; }
+        .participant { text-align: left; }
+        .on-time { background-color: #d1edff; color: #0d6efd; }
+        .too-late { background-color: #fff3cd; color: #664d03; }
+        .too-early { background-color: #cff4fc; color: #055160; }
+        .unknown { background-color: #f8f9fa; color: #6c757d; }
+        .manual { background-color: #e7f3ff; color: #0c5aa6; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Посещаемость группы: {{ group.code|escapejs }}</h1>
+    <table>
+        <thead>
+            <tr>`;
+        
+        // Первая строка заголовков с объединением ячеек
+        exportData.topHeaders.forEach((header, index) => {
+            if (index === 0) {
+                htmlContent += `<th rowspan="2" style="background-color: #f8f9fa; font-weight: bold;">${header}</th>`;
+            } else if (header !== '') {
+                htmlContent += `<th colspan="2" style="background-color: #f8f9fa; font-weight: bold;">${header}</th>`;
+            }
+        });
+        
+        htmlContent += '</tr><tr>';
+        
+        // Вторая строка заголовков (только вход/выход)
+        exportData.subHeaders.forEach((header, index) => {
+            if (index > 0) { // Пропускаем первую пустую ячейку для участника
+                htmlContent += `<th style="background-color: #e9ecef; font-weight: bold;">${header}</th>`;
+            }
+        });
+        
+        htmlContent += '</tr></thead><tbody>';
+        
+        // Строки данных
+        exportData.rows.forEach(row => {
+            htmlContent += '<tr>';
+            row.forEach((cell, index) => {
+                let className = '';
+                let cellText = cell.text;
+                
+                if (index === 0) {
+                    className = 'participant';
+                } else {
+                    // Определяем CSS класс по цвету
+                    if (cell.fillColor === '#d1edff') className = 'on-time';
+                    else if (cell.fillColor === '#fff3cd') className = 'too-late';
+                    else if (cell.fillColor === '#cff4fc') className = 'too-early';
+                    else if (cell.fillColor === '#e7f3ff') className = 'manual';
+                    else if (cell.fillColor === '#f8f9fa') className = 'unknown';
+                }
+                
+                htmlContent += `<td class="${className}">${cellText}</td>`;
+            });
+            htmlContent += '</tr>';
+        });
+        
+        htmlContent += `
+        </tbody>
+    </table>
+</body>
+</html>`;
+
+        // Создаем blob и скачиваем
+        const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Посещаемость_{{ group.code|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.xls';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function exportToPDF() {
+        const exportData = prepareExportData();
+        
+        const docDefinition = {
+            pageOrientation: 'landscape',
+            pageSize: 'A4',
+            pageMargins: [20, 60, 20, 40],
+            content: [
+                {
+                    text: 'Посещаемость группы: {{ group.code|escapejs }}',
+                    style: 'header',
+                    alignment: 'center',
+                    margin: [0, 0, 0, 20]
+                },
+                {
+                    table: {
+                        headerRows: 2,
+                        widths: ['auto', ...Array(exportData.topHeaders.length - 1).fill('*')],
+                        body: [
+                            // Первая строка заголовков (даты)
+                            exportData.topHeaders.map(header => ({ 
+                                text: header, 
+                                fillColor: '#f8f9fa',
+                                bold: true,
+                                alignment: 'center'
+                            })),
+                            // Вторая строка заголовков (вход/выход)
+                            exportData.subHeaders.map(header => ({ 
+                                text: header, 
+                                fillColor: '#e9ecef',
+                                bold: true,
+                                alignment: 'center'
+                            })),
+                            // Строки данных
+                            ...exportData.rows.map(row => row.map(cell => ({
+                                text: cell.text,
+                                fillColor: cell.fillColor || null,
+                                color: cell.color || '#000000'
+                            })))
+                        ]
+                    },
+                    layout: 'lightHorizontalLines'
+                }
+            ],
+            styles: {
+                header: {
+                    fontSize: 16,
+                    bold: true
+                }
+            }
+        };
+
+        pdfMake.createPdf(docDefinition).download('Посещаемость_{{ group.code|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.pdf');
+    }
+
+    function prepareExportData() {
+        const todayISO = new Date().toISOString().slice(0, 10);
+        
+        // Создаем двухуровневые заголовки
+        const topHeaders = ['Участник'];
+        const subHeaders = [''];
+        
+        // Добавляем "Сегодня" (если есть)
+        const todaySession = sessions.find(([_, date]) => date === todayISO);
+        if (todaySession) {
+            topHeaders.push('Сегодня', '');
+            subHeaders.push('вход', 'выход');
+        }
+        
+        // Добавляем остальные сессии
+        sessions.forEach(([sessionId, sessionDate]) => {
+            if (sessionDate !== todayISO) {
+                const formattedDate = formatDate(sessionDate);
+                topHeaders.push(formattedDate, '');
+                subHeaders.push('вход', 'выход');
+            }
+        });
+
+        // Создаем строки данных
+        const rows = [];
+        participants.forEach(participant => {
+            const row = [{ text: participant.name }];
+            
+            // Добавляем данные "Сегодня"
+            if (todaySession) {
+                const todayAttendance = participant.attendance[todaySession[0]];
+                if (todayAttendance) {
+                    // Вход
+                    row.push(formatExportCell(
+                        todayAttendance.arrived_at,
+                        todayAttendance.arrived_status,
+                        todayAttendance.marked_entry
+                    ));
+                    // Выход
+                    row.push(formatExportCell(
+                        todayAttendance.left_at,
+                        todayAttendance.left_status,
+                        todayAttendance.marked_exit
+                    ));
+                } else {
+                    row.push({ text: '--' }, { text: '--' });
+                }
+            }
+            
+            // Добавляем данные остальных сессий
+            sessions.forEach(([sessionId, sessionDate]) => {
+                if (sessionDate !== todayISO) {
+                    const attendance = participant.attendance[sessionId];
+                    if (attendance) {
+                        // Вход
+                        row.push(formatExportCell(
+                            attendance.arrived_at,
+                            attendance.arrived_status,
+                            attendance.marked_entry
+                        ));
+                        // Выход
+                        row.push(formatExportCell(
+                            attendance.left_at,
+                            attendance.left_status,
+                            attendance.marked_exit
+                        ));
+                    } else {
+                        row.push({ text: '--' }, { text: '--' });
+                    }
+                }
+            });
+            
+            rows.push(row);
+        });
+
+        return { topHeaders, subHeaders, rows };
+    }
+
+    function formatExportCell(time, status, isManual) {
+        if (!time) {
+            return { text: '--' };
+        }
+
+        const cellData = { text: time };
+        
+        // Применяем цветовое кодирование
+        if (isManual) {
+            cellData.fillColor = '#e7f3ff';
+            cellData.color = '#0c5aa6';
+        } else {
+            switch (status) {
+                case 'on_time':
+                    cellData.fillColor = '#d1edff';
+                    cellData.color = '#0d6efd';
+                    break;
+                case 'too_late':
+                    cellData.fillColor = '#fff3cd';
+                    cellData.color = '#664d03';
+                    break;
+                case 'too_early':
+                    cellData.fillColor = '#cff4fc';
+                    cellData.color = '#055160';
+                    break;
+                case 'unknown':
+                case null:
+                case undefined:
+                default:
+                    // По умолчанию для неопределенных статусов - серый фон
+                    cellData.fillColor = '#f8f9fa';
+                    cellData.color = '#6c757d';
+                    break;
+            }
+        }
+
+        return cellData;
+    }
 
     </script>
 
