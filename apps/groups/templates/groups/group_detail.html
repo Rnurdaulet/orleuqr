@@ -767,52 +767,120 @@
     function exportToPDF() {
         const exportData = prepareExportData();
         
+        // Создаем правильную структуру для PDF с двухуровневыми заголовками
+        const pdfTableBody = [];
+        
+        // Первая строка заголовков (даты с объединением)
+        const firstHeaderRow = [];
+        exportData.topHeaders.forEach((header, index) => {
+            if (index === 0) {
+                // Участник объединяет 2 строки
+                firstHeaderRow.push({
+                    text: header,
+                    fillColor: '#f8f9fa',
+                    bold: true,
+                    alignment: 'center',
+                    fontSize: 8,
+                    rowSpan: 2
+                });
+            } else if (header !== '') {
+                // Даты объединяют 2 колонки
+                firstHeaderRow.push({
+                    text: header,
+                    fillColor: '#f8f9fa',
+                    bold: true,
+                    alignment: 'center',
+                    fontSize: 7,
+                    colSpan: 2
+                });
+                firstHeaderRow.push({}); // Пустая ячейка для colSpan
+            }
+        });
+        
+        // Вторая строка заголовков (вход/выход)
+        const secondHeaderRow = [];
+        exportData.subHeaders.forEach((header, index) => {
+            if (index === 0) {
+                // Пропускаем первую ячейку (она объединена с верхней)
+                secondHeaderRow.push({});
+            } else {
+                secondHeaderRow.push({
+                    text: header,
+                    fillColor: '#e9ecef',
+                    bold: true,
+                    alignment: 'center',
+                    fontSize: 6
+                });
+            }
+        });
+        
+        pdfTableBody.push(firstHeaderRow);
+        pdfTableBody.push(secondHeaderRow);
+        
+        // Добавляем строки данных
+        exportData.rows.forEach(row => {
+            const dataRow = row.map((cell, index) => ({
+                text: cell.text,
+                fillColor: cell.fillColor || null,
+                color: cell.color || '#000000',
+                fontSize: index === 0 ? 7 : 6,
+                alignment: index === 0 ? 'left' : 'center'
+            }));
+            pdfTableBody.push(dataRow);
+        });
+        
+        // Вычисляем ширины колонок (каждая ячейка времени)
+        const totalDataColumns = exportData.subHeaders.length;
+        const participantWidth = 50;
+        const remainingWidth = 700;
+        const timeColumnWidth = Math.max(18, remainingWidth / (totalDataColumns - 1));
+        
+        const columnWidths = [participantWidth];
+        for (let i = 1; i < totalDataColumns; i++) {
+            columnWidths.push(timeColumnWidth);
+        }
+        
         const docDefinition = {
             pageOrientation: 'landscape',
-            pageSize: 'A4',
-            pageMargins: [20, 60, 20, 40],
+            pageSize: 'A3',
+            pageMargins: [8, 35, 8, 20],
             content: [
                 {
                     text: 'Посещаемость группы: {{ group.code|escapejs }}',
                     style: 'header',
                     alignment: 'center',
-                    margin: [0, 0, 0, 20]
+                    margin: [0, 0, 0, 8]
                 },
                 {
                     table: {
                         headerRows: 2,
-                        widths: ['auto', ...Array(exportData.topHeaders.length - 1).fill('*')],
-                        body: [
-                            // Первая строка заголовков (даты)
-                            exportData.topHeaders.map(header => ({ 
-                                text: header, 
-                                fillColor: '#f8f9fa',
-                                bold: true,
-                                alignment: 'center'
-                            })),
-                            // Вторая строка заголовков (вход/выход)
-                            exportData.subHeaders.map(header => ({ 
-                                text: header, 
-                                fillColor: '#e9ecef',
-                                bold: true,
-                                alignment: 'center'
-                            })),
-                            // Строки данных
-                            ...exportData.rows.map(row => row.map(cell => ({
-                                text: cell.text,
-                                fillColor: cell.fillColor || null,
-                                color: cell.color || '#000000'
-                            })))
-                        ]
+                        widths: columnWidths,
+                        body: pdfTableBody
                     },
-                    layout: 'lightHorizontalLines'
+                    layout: {
+                        hLineWidth: function (i, node) {
+                            return i <= 2 ? 1 : 0.3; // Жирные линии для заголовков
+                        },
+                        vLineWidth: function (i, node) {
+                            return 0.3;
+                        },
+                        hLineColor: function (i, node) {
+                            return i <= 2 ? '#666666' : '#cccccc';
+                        },
+                        vLineColor: function (i, node) {
+                            return '#cccccc';
+                        }
+                    }
                 }
             ],
             styles: {
                 header: {
-                    fontSize: 16,
+                    fontSize: 11,
                     bold: true
                 }
+            },
+            defaultStyle: {
+                fontSize: 6
             }
         };
 
