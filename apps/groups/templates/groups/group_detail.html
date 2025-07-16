@@ -32,7 +32,6 @@
             <!-- End Row -->
         </div>
         <!-- End Page Header -->
-
         <div class="row justify-content-end mb-3">
             <div class="col-lg">
                 <!-- Datatable Info -->
@@ -393,6 +392,24 @@
     let sessions = [];
     let participants = [];
     
+    // Функция для инициализации tooltips
+    function initializeTooltips() {
+        // Уничтожаем существующие tooltips
+        var existingTooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        existingTooltips.forEach(function(tooltipTriggerEl) {
+            var tooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+        });
+        
+        // Создаем новые tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+    
     document.addEventListener("DOMContentLoaded", async () => {
         const res = await fetch("{% url 'groups:attendance_json' group.id %}");
         const raw = await res.json();
@@ -526,6 +543,7 @@
                     targetColumnIndex = e.target.getAttribute('data-target-column-index');
 
                 datatable.column(targetColumnIndex).search(elVal).draw();
+                setTimeout(() => initializeTooltips(), 100); // Реинициализируем tooltips после перерисовки
             });
         });
 
@@ -540,6 +558,7 @@
                 var newValue = $input.val();
                 if (newValue == ""){
                     datatable.search('').draw();
+                    setTimeout(() => initializeTooltips(), 100); // Реинициализируем tooltips
                 }
             }, 1);
         });
@@ -553,26 +572,30 @@
             const columnIndex = parseInt(e.target.getAttribute('data-column'));
             datatable.columns(columnIndex).visible(e.target.checked);
             updateColumnsBadge();
+            setTimeout(() => initializeTooltips(), 100); // Реинициализируем tooltips
         });
 
         // Initialize TomSelect
         HSCore.components.HSTomSelect.init('.js-select');
+        
+        // Initialize tooltips
+        initializeTooltips();
     });
 
     function getStatusBadge(status, isManual) {
         if (isManual) {
-            return '<span class="badge bg-soft-primary text-primary">*</span>';
+            return '<span class="badge bg-soft-primary text-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Отметка вручную">*</span>';
         }
         
         switch (status) {
             case 'on_time': 
-                return '<span class="badge bg-soft-success text-success">✓</span>';
+                return '<span class="badge bg-soft-success text-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Вовремя">✓</span>';
             case 'too_late': 
-                return '<span class="badge bg-soft-warning text-warning">!</span>';
+                return '<span class="badge bg-soft-warning text-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Опоздал">!</span>';
             case 'too_early': 
-                return '<span class="badge bg-soft-info text-info">~</span>';
+                return '<span class="badge bg-soft-info text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Рано">~</span>';
             case 'unknown': 
-                return '<span class="badge bg-soft-secondary text-secondary">?</span>';
+                return '<span class="badge bg-soft-secondary text-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Неизвестно">?</span>';
             default: 
                 return '<span class="text-muted">-</span>';
         }
@@ -765,11 +788,11 @@
                 
                 // Применяем цвета только к ячейкам со временем (не к участникам и не к пустым)
                 if (colIndex > 0 && cell.text !== '--') {
-                    if (cell.fillColor === '#d1edff') fillColor = 'FF4CAF50'; // Вовремя - зеленый
-                    else if (cell.fillColor === '#fff3cd') fillColor = 'FFFF9800'; // Опоздал - оранжевый
-                    else if (cell.fillColor === '#cff4fc') fillColor = 'FF2196F3'; // Рано - синий
-                    else if (cell.fillColor === '#e7f3ff') fillColor = 'FF9C27B0'; // Ручная отметка - фиолетовый
-                    else if (cell.fillColor === '#f8f9fa') fillColor = 'FF424242'; // Неизвестно - темно-серый
+                    if (cell.fillColor === '#4CAF50') fillColor = 'FF4CAF50'; // Вовремя - зеленый
+                    else if (cell.fillColor === '#FF9800') fillColor = 'FFFF9800'; // Опоздал - оранжевый
+                    else if (cell.fillColor === '#2196F3') fillColor = 'FF2196F3'; // Рано - синий
+                    else if (cell.fillColor === '#9C27B0') fillColor = 'FF9C27B0'; // Ручная отметка - фиолетовый
+                    else if (cell.fillColor === '#424242') fillColor = 'FF424242'; // Неизвестно - темно-серый
                 }
                 
                 // Базовый стиль для всех ячеек данных
@@ -1111,31 +1134,36 @@
 
         const cellData = { text: time };
         
-        // Применяем цветовое кодирование
+        // Применяем яркое цветовое кодирование (соответствует Excel)
         if (isManual) {
-            cellData.fillColor = '#e7f3ff';
-            cellData.color = '#0c5aa6';
+            cellData.fillColor = '#9C27B0'; // Фиолетовый
+            cellData.color = '#FFFFFF'; // Белый текст
+            cellData.bold = true;
         } else {
             switch (status) {
                 case 'on_time':
-                    cellData.fillColor = '#d1edff';
-                    cellData.color = '#0d6efd';
+                    cellData.fillColor = '#4CAF50'; // Зеленый
+                    cellData.color = '#FFFFFF'; // Белый текст
+                    cellData.bold = true;
                     break;
                 case 'too_late':
-                    cellData.fillColor = '#fff3cd';
-                    cellData.color = '#664d03';
+                    cellData.fillColor = '#FF9800'; // Оранжевый
+                    cellData.color = '#FFFFFF'; // Белый текст
+                    cellData.bold = true;
                     break;
                 case 'too_early':
-                    cellData.fillColor = '#cff4fc';
-                    cellData.color = '#055160';
+                    cellData.fillColor = '#2196F3'; // Синий
+                    cellData.color = '#FFFFFF'; // Белый текст
+                    cellData.bold = true;
                     break;
                 case 'unknown':
                 case null:
                 case undefined:
                 default:
-                    // По умолчанию для неопределенных статусов - серый фон
-                    cellData.fillColor = '#f8f9fa';
-                    cellData.color = '#6c757d';
+                    // По умолчанию для неопределенных статусов - темно-серый фон
+                    cellData.fillColor = '#424242'; // Темно-серый
+                    cellData.color = '#FFFFFF'; // Белый текст
+                    cellData.bold = true;
                     break;
             }
         }
