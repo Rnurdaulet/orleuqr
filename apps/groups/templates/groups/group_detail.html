@@ -765,11 +765,11 @@
                 
                 // Применяем цвета только к ячейкам со временем (не к участникам и не к пустым)
                 if (colIndex > 0 && cell.text !== '--') {
-                    if (cell.fillColor === '#d1edff') fillColor = 'FFD1EDFF'; // Вовремя - светло-синий
-                    else if (cell.fillColor === '#fff3cd') fillColor = 'FFFFF3CD'; // Опоздал - светло-желтый
-                    else if (cell.fillColor === '#cff4fc') fillColor = 'FFCFF4FC'; // Рано - светло-голубой
-                    else if (cell.fillColor === '#e7f3ff') fillColor = 'FFE7F3FF'; // Ручная отметка - голубой
-                    else if (cell.fillColor === '#f8f9fa') fillColor = 'FFF8F9FA'; // Неизвестно - серый
+                    if (cell.fillColor === '#d1edff') fillColor = 'FF4CAF50'; // Вовремя - зеленый
+                    else if (cell.fillColor === '#fff3cd') fillColor = 'FFFF9800'; // Опоздал - оранжевый
+                    else if (cell.fillColor === '#cff4fc') fillColor = 'FF2196F3'; // Рано - синий
+                    else if (cell.fillColor === '#e7f3ff') fillColor = 'FF9C27B0'; // Ручная отметка - фиолетовый
+                    else if (cell.fillColor === '#f8f9fa') fillColor = 'FF424242'; // Неизвестно - темно-серый
                 }
                 
                 // Базовый стиль для всех ячеек данных
@@ -793,6 +793,9 @@
                         pattern: 'solid', 
                         fgColor: { argb: fillColor } 
                     };
+                    
+                    // Белый жирный текст на всех цветных фонах для отличной читаемости
+                    cellStyle.font = { bold: true, color: { argb: 'FFFFFFFF' } };
                 } else if (colIndex === 0) {
                     // Белый фон для участников
                     cellStyle.fill = { 
@@ -800,6 +803,11 @@
                         pattern: 'solid', 
                         fgColor: { argb: 'FFFFFFFF' } 
                     };
+                    // Черный текст для участников
+                    cellStyle.font = { color: { argb: 'FF000000' } };
+                } else {
+                    // Черный текст для пустых ячеек
+                    cellStyle.font = { color: { argb: 'FF000000' } };
                 }
                 
                 excelCell.style = cellStyle;
@@ -850,24 +858,24 @@
         
         // Цветовые примеры в легенде
         const legendColors = [
-            { row: 4, color: 'FFD1EDFF' }, // Вовремя
-            { row: 5, color: 'FFFFF3CD' }, // Опоздал
-            { row: 6, color: 'FFCFF4FC' }, // Рано
-            { row: 7, color: 'FFE7F3FF' }, // Ручная отметка
-            { row: 8, color: 'FFF8F9FA' }  // Неизвестно
+            { row: 4, color: 'FF4CAF50' }, // Вовремя - зеленый
+            { row: 5, color: 'FFFF9800' }, // Опоздал - оранжевый
+            { row: 6, color: 'FF2196F3' }, // Рано - синий
+            { row: 7, color: 'FF9C27B0' }, // Ручная отметка - фиолетовый
+            { row: 8, color: 'FF424242' }  // Неизвестно - темно-серый
         ];
         
         legendColors.forEach(({ row, color }) => {
             const cell = legendSheet.getCell(`A${row}`);
             cell.style = {
                 fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: color } },
-                font: { bold: true, color: { argb: 'FF000000' } },
+                font: { bold: true, color: { argb: 'FFFFFFFF' } },
                 alignment: { horizontal: 'center', vertical: 'middle' },
                 border: {
-                    top: { style: 'medium', color: { argb: 'FF666666' } },
-                    bottom: { style: 'medium', color: { argb: 'FF666666' } },
-                    left: { style: 'medium', color: { argb: 'FF666666' } },
-                    right: { style: 'medium', color: { argb: 'FF666666' } }
+                    top: { style: 'medium', color: { argb: 'FF333333' } },
+                    bottom: { style: 'medium', color: { argb: 'FF333333' } },
+                    left: { style: 'medium', color: { argb: 'FF333333' } },
+                    right: { style: 'medium', color: { argb: 'FF333333' } }
                 }
             };
         });
