@@ -257,6 +257,11 @@ LOGGING = {
             "level": "ERROR",
             "propagate": False,
         },
+        "django.server": {
+            "handlers": ["error_file"] if not DEBUG else [],
+            "level": "WARNING",
+            "propagate": False,
+        },
         "celery": {
             "handlers": ["file"],
             "level": "INFO",

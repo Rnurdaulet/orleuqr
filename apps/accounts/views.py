@@ -12,7 +12,6 @@ def login_view(request):
         # redirect_uri = f"{protocol}://{host}/accounts/callback/"
         redirect_uri = settings.SITE_BASE_URL.rstrip("/") + "/accounts/callback/"
 
-        logger.info(f"Starting OIDC login process. Redirect URI: {redirect_uri}")
         return oauth.keycloak.authorize_redirect(request, redirect_uri)
 
     except Exception as e:
@@ -22,11 +21,8 @@ def login_view(request):
 
 def callback(request):
     try:
-        logger.info("Received callback from Keycloak")
-        logger.debug(f"Callback GET params: {dict(request.GET)}")
-
         if 'code' not in request.GET or 'state' not in request.GET:
-            logger.error("Missing 'code' or 'state' in callback request")
+            logger.warning("Missing 'code' or 'state' in callback request")
             return redirect(settings.LOGIN_URL)
 
         token = oauth.keycloak.authorize_access_token(request)
@@ -35,21 +31,19 @@ def callback(request):
         userinfo = token.get('userinfo')
 
         if not access_token or not userinfo:
-            logger.error("Access token or userinfo missing in OIDC response")
+            logger.warning("Access token or userinfo missing in OIDC response")
             return redirect(settings.LOGIN_URL)
-
-        logger.info(f"Userinfo received: {userinfo}")
 
         # Валидация email и IIN
         email = userinfo.get('email')
         if not email or '@' not in email:
-            logger.error(f"Invalid or missing email: {email}")
+            logger.warning(f"Invalid or missing email")
             return redirect(settings.LOGIN_URL)
 
         raw_iin = userinfo.get('preferred_username', '')
         iin = raw_iin[:12] if len(raw_iin) >= 12 else None
         if not iin:
-            logger.error(f"Invalid IIN from preferred_username: {raw_iin}")
+            logger.warning(f"Invalid IIN from preferred_username")
             return redirect(settings.LOGIN_URL)
 
         full_name = userinfo.get('name', '')
@@ -62,7 +56,8 @@ def callback(request):
             }
         )
 
-        logger.info(f"{'Created' if created else 'Updated'} profile: {profile.email}")
+        if created:
+            logger.info(f"New user registered: {email}")
 
         request.session['user_id'] = profile.id
         request.session['user_email'] = profile.email
@@ -72,7 +67,6 @@ def callback(request):
         request.user_profile = profile
         request.session.save()
 
-        logger.info(f"User {profile.email} authenticated")
         return redirect(settings.LOGIN_REDIRECT_URL)
 
     except Exception as e:
@@ -84,7 +78,6 @@ def logout(request):
     try:
         user_email = request.session.get('user_email')
         id_token = request.session.get('id_token')
-        logger.info(f"Logging out user: {user_email}")
 
         # Очищаем локальную сессию
         request.session.flush()
@@ -112,10 +105,8 @@ def logout(request):
                 post_logout_redirect_uri = settings.SITE_BASE_URL.rstrip("/") + settings.LOGOUT_REDIRECT_URL
                 logout_url += f"&post_logout_redirect_uri={post_logout_redirect_uri}"
             
-            logger.info(f"Redirecting to Keycloak logout: {logout_url}")
             return redirect(logout_url)
 
-        logger.info(f"User {user_email} successfully logged out (no OIDC logout)")
         return redirect(settings.LOGOUT_REDIRECT_URL)
 
     except Exception as e:

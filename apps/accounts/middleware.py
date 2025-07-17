@@ -10,9 +10,8 @@ class AuthenticationMiddleware(MiddlewareMixin):
                 try:
                     profile = PersonProfile.objects.get(id=int(user_id))
                     request.user_profile = profile
-                    logger.debug(f"Authenticated as {profile.email} (ID={profile.id})")
                 except (PersonProfile.DoesNotExist, ValueError, TypeError) as e:
-                    logger.warning(f"Invalid session or missing profile for user_id={user_id}: {e}")
+                    logger.warning(f"Invalid session or missing profile for user_id={user_id}")
                     request.session.flush()
                     request.user_profile = None
             else:

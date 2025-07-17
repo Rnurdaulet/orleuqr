@@ -25,7 +25,5 @@ try:
         server_metadata_url=f"{base_url}/.well-known/openid-configuration",
     )
 
-    logger.info("Keycloak OIDC provider successfully registered")
-
 except Exception as e:
     logger.error(f"Failed to register OIDC client: {str(e)}", exc_info=True)
