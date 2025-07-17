@@ -684,7 +684,7 @@
 
     function updateColumnsBadge() {
         const visibleColumns = document.querySelectorAll('.column-toggle:checked').length;
-        const badge = document.querySelector('.badge.bg-soft-dark');
+        const badge = document.querySelector('.badge.bg-soft-dark.rounded-circle');
         if (badge) {
             badge.textContent = visibleColumns;
         }
