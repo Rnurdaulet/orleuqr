@@ -14,4 +14,7 @@ urlpatterns = [
     
     # DRF endpoints
     path('', include(router.urls)),
+    
+    # CRUD API для управления группами через код
+    path('crud/', include('apps.groups.api_urls', namespace='groups_crud')),
 ] 
