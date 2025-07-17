@@ -1,48 +1,86 @@
-# API CRUD для управления группами в формате miniresponse.json
+# API для управления группами - Руководство для разработчиков
 
-## Обзор
+## 📋 Обзор
 
-Реализован REST API для полного управления группами через уникальный код группы (поле `code`). 
-**API работает ТОЧНО в том же формате, что и файл miniresponse.json** - все поля, структура данных и форматы соответствуют оригинальному JSON файлу.
+Этот API предоставляет полное CRUD управление группами, участниками и сессиями через единый интерфейс. API полностью совместим с форматом `miniresponse.json` и предназначен для интеграции с внешними сервисами.
 
-Все операции (группы, участники, сессии) управляются через единый CRUD API.
+### 🎯 Ключевые особенности
 
-## Базовый URL
+- **Единый CRUD**: Все операции (группы, участники, сессии) через один API
+- **Формат miniresponse.json**: 100% совместимость с существующими данными
+- **Lookup по коду**: Все операции через уникальный код группы
+- **JSON ошибки**: Все ошибки (включая 500) возвращаются в JSON формате [[memory:3512263]]
+- **Автоматическое создание**: Участники и тренеры создаются автоматически
+- **Гибкие обновления**: Частичные и полные обновления
 
+## 🔗 Базовая информация
+
+### Endpoint
 ```
-http://your-domain.com/api/crud/groups/
+POST,GET,PUT,PATCH,DELETE /api/crud/groups/
+GET,PUT,PATCH,DELETE      /api/crud/groups/{code}/
 ```
 
-## Аутентификация
-
-API использует токен-аутентификацию через заголовок `Authorization`. 
-
-### Получение токена
-
-1. Создайте API токен в админ панели Django: `http://your-domain.com/admin/core/apitoken/`
-2. Выберите уровень доступа:
-   - `read_only` - только чтение
-   - `read_write` - чтение и запись  
-   - `admin` - полный доступ
-
-### Использование токена
-
-Все запросы должны содержать заголовок:
-```
+### Аутентификация [[memory:3511100]]
+Все запросы требуют API токен в заголовке:
+```http
 Authorization: Bearer your-api-token-here
 ```
 
-### Пример запроса
+### Формат данных
+Все даты в формате ISO: `"2025-07-11T00:00:00"`  
+Все поля точно как в `miniresponse.json`
+
+## 🚀 Быстрый старт
+
+### 1. Получение API токена
+
+Создайте токен в админ панели:
+```
+http://your-domain.com/admin/core/apitoken/
+```
+
+Выберите уровень доступа:
+- `read_only` - только чтение
+- `read_write` - чтение и запись  
+- `admin` - полный доступ
+
+### 2. Базовый запрос
 
 ```bash
 curl -X GET http://localhost:8000/api/crud/groups/ \
-  -H "Authorization: Bearer your-api-token-here" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json"
 ```
 
-## Основные эндпоинты
+### 3. Проверка подключения
 
-### 1. Список всех групп
+```bash
+# Получить список групп
+GET /api/crud/groups/
+
+# Ответ при успехе (200)
+{
+  "count": 2,
+  "results": [
+    {
+      "groupId": 14462,
+      "groupUnique": "26EB9T",
+      "courseName": "Тестовый курс",
+      "supervisorName": "Иванов Иван",
+      "startingDate": "2025-07-11",
+      "endingDate": "2025-07-18",
+      "participantsCount": 32,
+      "trainersCount": 1
+    }
+  ]
+}
+```
+
+## 📖 Подробная документация API
+
+### 1. Получение списка групп
+
 ```http
 GET /api/crud/groups/
 ```
@@ -50,11 +88,11 @@ GET /api/crud/groups/
 **Ответ:**
 ```json
 {
-  "count": 2,
+  "count": 10,
   "results": [
     {
       "groupId": 14462,
-      "groupUnique": "26EB9T",
+      "groupUnique": "26EB9T", 
       "courseName": "Бастауыш сынып оқушыларының зерттеушілік",
       "supervisorName": "Ильясова Гульзира",
       "startingDate": "2025-07-11",
@@ -66,14 +104,16 @@ GET /api/crud/groups/
 }
 ```
 
-### 2. Получить группу по коду
+### 2. Получение группы по коду
+
 ```http
 GET /api/crud/groups/{code}/
 ```
 
-**Пример запроса:**
-```http
-GET /api/crud/groups/26EB9T/
+**Пример:**
+```bash
+curl -X GET http://localhost:8000/api/crud/groups/26EB9T/ \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 **Ответ:**
@@ -84,8 +124,8 @@ GET /api/crud/groups/26EB9T/
   "courseName": "Бастауыш сынып оқушыларының зерттеушілік",
   "supervisorName": "Ильясова Гульзира",
   "supervisorIIN": "831212401667",
-  "startingDate": "2025-07-11",
-  "endingDate": "2025-07-18",
+  "startingDate": "2025-07-11T00:00:00",
+  "endingDate": "2025-07-18T00:00:00",
   "use_time_limits": false,
   "listenersList": [
     {
@@ -104,15 +144,15 @@ GET /api/crud/groups/26EB9T/
     }
   ],
   "daysforAttendence": [
-    "2025-07-11",
-    "2025-07-12"
+    "2025-07-11T00:00:00",
+    "2025-07-12T00:00:00"
   ],
   "sessions": [
     {
       "date": "2025-07-11",
       "entry_start": "09:00:00",
       "entry_end": "10:00:00",
-      "exit_start": "17:00:00",
+      "exit_start": "17:00:00", 
       "exit_end": "18:00:00",
       "qr_token_entry": "550e8400-e29b-41d4-a716-446655440000",
       "qr_token_exit": "550e8400-e29b-41d4-a716-446655440001"
@@ -121,7 +161,8 @@ GET /api/crud/groups/26EB9T/
 }
 ```
 
-### 3. Создать новую группу
+### 3. Создание новой группы
+
 ```http
 POST /api/crud/groups/
 ```
@@ -130,9 +171,9 @@ POST /api/crud/groups/
 ```json
 {
   "groupId": 14462,
-  "groupUnique": "26EB9T",
-  "courseName": "«Бастауыш сынып оқушыларының зерттеушілік»",
-  "supervisorName": "Ильясова Гульзира",
+  "groupUnique": "TEST123",
+  "courseName": "Новый тестовый курс",
+  "supervisorName": "Иванов Иван Иванович",
   "supervisorIIN": "831212401667",
   "startingDate": "2025-07-11T00:00:00",
   "endingDate": "2025-07-18T00:00:00",
@@ -145,7 +186,7 @@ POST /api/crud/groups/
     },
     {
       "iin": "850822401832",
-      "surname": "СУЙЕРКУЛОВА",
+      "surname": "СУЙЕРКУЛОВА", 
       "name": "МАРЖАН",
       "email": "suierkulovamarjan@gmail.com"
     }
@@ -158,35 +199,56 @@ POST /api/crud/groups/
 }
 ```
 
-### 4. Обновить группу
+**Curl пример:**
+```bash
+curl -X POST http://localhost:8000/api/crud/groups/ \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "groupId": 99999,
+    "groupUnique": "NEWTEST124",
+    "courseName": "Тестовый курс для API",
+    "supervisorName": "Тестовый Тренер Тренерович",
+    "supervisorIIN": "123456789012",
+    "startingDate": "2024-01-01T00:00:00",
+    "endingDate": "2024-01-31T00:00:00",
+    "listenersList": [
+      {
+        "iin": "987654321098",
+        "surname": "ТЕСТОВЫЙ",
+        "name": "УЧАСТНИК",
+        "email": "participant@test.ru"
+      }
+    ],
+    "daysforAttendence": [
+      "2024-01-01T00:00:00",
+      "2024-01-02T00:00:00"
+    ]
+  }'
+```
+
+### 4. Обновление группы
+
+#### Полное обновление (PUT)
 ```http
-PUT /api/crud/groups/{code}/     # Полное обновление
-PATCH /api/crud/groups/{code}/   # Частичное обновление
+PUT /api/crud/groups/{code}/
 ```
 
-**Пример частичного обновления:**
-```json
-{
-  
-  "supervisorName": "Новый тренер"
-}
-```
-
-### 5. Удалить группу
-```http
-DELETE /api/crud/groups/{code}/
-```
-
-## Управление участниками и сессиями
-
-**Все управление участниками и сессиями происходит через основные CRUD операции**
-
-### Обновить участников группы
+#### Частичное обновление (PATCH)
 ```http
 PATCH /api/crud/groups/{code}/
 ```
 
-**Тело запроса:**
+**Примеры частичного обновления:**
+
+##### Обновить только название курса:
+```json
+{
+  "courseName": "Обновленное название курса"
+}
+```
+
+##### Обновить участников:
 ```json
 {
   "listenersList": [
@@ -206,12 +268,7 @@ PATCH /api/crud/groups/{code}/
 }
 ```
 
-### Обновить сессии группы
-```http
-PATCH /api/crud/groups/{code}/
-```
-
-**Тело запроса:**
+##### Обновить сессии:
 ```json
 {
   "daysforAttendence": [
@@ -223,15 +280,10 @@ PATCH /api/crud/groups/{code}/
 }
 ```
 
-### Одновременное обновление участников и сессий
-```http
-PATCH /api/crud/groups/{code}/
-```
-
-**Тело запроса:**
+##### Комбинированное обновление:
 ```json
 {
-  "courseName": "Обновленное название курса",
+  "courseName": "Обновленное название",
   "listenersList": [
     {
       "iin": "841105401171",
@@ -247,32 +299,177 @@ PATCH /api/crud/groups/{code}/
 }
 ```
 
-## Импорт из miniresponse.json
-
-**Импорт происходит через обычный POST запрос для создания группы** - просто отправьте данные из miniresponse.json как есть:
+### 5. Удаление группы
 
 ```http
-POST /api/crud/groups/
+DELETE /api/crud/groups/{code}/
 ```
 
-Можете взять любой объект из массива в miniresponse.json и отправить его напрямую!
+**Пример:**
+```bash
+curl -X DELETE http://localhost:8000/api/crud/groups/TEST123/ \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
 
-## Коды ошибок
+**Ответ:**
+```json
+{
+  "message": "Группа успешно удалена"
+}
+```
 
-Все ошибки возвращаются в JSON формате:
+## 🔧 Практические сценарии
 
+### Сценарий 1: Импорт данных из miniresponse.json
+
+```python
+import requests
+import json
+
+# Читаем данные из файла
+with open('miniresponse.json', 'r', encoding='utf-8') as f:
+    groups_data = json.load(f)
+
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+
+# Импортируем каждую группу
+for group in groups_data:
+    response = requests.post(
+        'http://localhost:8000/api/crud/groups/',
+        json=group,
+        headers=headers
+    )
+    
+    if response.status_code == 201:
+        print(f"✅ Группа {group['groupUnique']} создана")
+    else:
+        print(f"❌ Ошибка: {response.text}")
+```
+
+### Сценарий 2: Массовое обновление участников
+
+```python
+# Получаем все группы
+response = requests.get(
+    'http://localhost:8000/api/crud/groups/',
+    headers=headers
+)
+
+groups = response.json()['results']
+
+# Добавляем нового участника в каждую группу
+new_participant = {
+    "iin": "999999999999",
+    "surname": "НОВЫЙ",
+    "name": "УЧАСТНИК",
+    "email": "new@example.com"
+}
+
+for group in groups:
+    group_code = group['groupUnique']
+    
+    # Получаем текущих участников
+    group_response = requests.get(
+        f'http://localhost:8000/api/crud/groups/{group_code}/',
+        headers=headers
+    )
+    
+    current_group = group_response.json()
+    current_participants = current_group.get('listenersList', [])
+    
+    # Добавляем нового участника
+    current_participants.append(new_participant)
+    
+    # Обновляем группу
+    update_response = requests.patch(
+        f'http://localhost:8000/api/crud/groups/{group_code}/',
+        json={'listenersList': current_participants},
+        headers=headers
+    )
+    
+    if update_response.status_code == 200:
+        print(f"✅ Участник добавлен в группу {group_code}")
+```
+
+### Сценарий 3: Создание групп с расписанием
+
+```python
+def create_group_with_schedule(course_name, supervisor_name, supervisor_iin, 
+                             start_date, duration_days, participants):
+    """
+    Создает группу с автоматически сгенерированным расписанием
+    """
+    from datetime import datetime, timedelta
+    
+    # Генерируем уникальный код
+    import random, string
+    group_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    
+    # Генерируем даты сессий
+    start = datetime.strptime(start_date, '%Y-%m-%d')
+    sessions = []
+    for i in range(duration_days):
+        session_date = start + timedelta(days=i)
+        sessions.append(session_date.strftime('%Y-%m-%dT00:00:00'))
+    
+    group_data = {
+        "groupId": random.randint(10000, 99999),
+        "groupUnique": group_code,
+        "courseName": course_name,
+        "supervisorName": supervisor_name,
+        "supervisorIIN": supervisor_iin,
+        "startingDate": f"{start_date}T00:00:00",
+        "endingDate": f"{(start + timedelta(days=duration_days-1)).strftime('%Y-%m-%d')}T00:00:00",
+        "listenersList": participants,
+        "daysforAttendence": sessions
+    }
+    
+    response = requests.post(
+        'http://localhost:8000/api/crud/groups/',
+        json=group_data,
+        headers=headers
+    )
+    
+    return response
+
+# Использование
+participants = [
+    {
+        "iin": "123456789012",
+        "surname": "ИВАНОВ",
+        "name": "ИВАН",
+        "email": "ivan@example.com"
+    }
+]
+
+result = create_group_with_schedule(
+    course_name="Python для начинающих",
+    supervisor_name="Петров Петр Петрович",
+    supervisor_iin="987654321098",
+    start_date="2024-02-01",
+    duration_days=5,
+    participants=participants
+)
+```
+
+## ⚠️ Обработка ошибок
+
+Все ошибки возвращаются в едином JSON формате:
+
+### Коды состояния
 - `200` - Успешный запрос
 - `201` - Ресурс создан
 - `204` - Ресурс удален
 - `400` - Неверные данные запроса
 - `401` - Не авторизован
+- `403` - Доступ запрещен
 - `404` - Группа не найдена
 - `500` - Внутренняя ошибка сервера
 
 ### Формат ошибок
-
-Все ошибки возвращаются в едином JSON формате:
-
 ```json
 {
   "error": true,
@@ -283,155 +480,269 @@ POST /api/crud/groups/
 }
 ```
 
-### Тестирование ошибок
+### Примеры обработки ошибок
 
-Для тестирования обработки ошибок 500 используйте специальный endpoint:
+```python
+def safe_api_request(method, url, **kwargs):
+    """Безопасный запрос к API с обработкой ошибок"""
+    try:
+        response = requests.request(method, url, **kwargs)
+        
+        if response.status_code == 200:
+            return {'success': True, 'data': response.json()}
+        elif response.status_code == 201:
+            return {'success': True, 'data': response.json(), 'created': True}
+        elif response.status_code == 204:
+            return {'success': True, 'deleted': True}
+        else:
+            # Все ошибки приходят в JSON формате
+            error_data = response.json()
+            return {
+                'success': False,
+                'error': error_data,
+                'status_code': response.status_code
+            }
+            
+    except requests.exceptions.ConnectionError:
+        return {
+            'success': False,
+            'error': {'message': 'Не удается подключиться к серверу'},
+            'status_code': 0
+        }
+    except json.JSONDecodeError:
+        return {
+            'success': False,
+            'error': {'message': 'Некорректный ответ сервера'},
+            'status_code': response.status_code
+        }
+
+# Использование
+result = safe_api_request(
+    'GET',
+    'http://localhost:8000/api/crud/groups/TEST123/',
+    headers=headers
+)
+
+if result['success']:
+    print("Группа найдена:", result['data']['courseName'])
+else:
+    print("Ошибка:", result['error']['message'])
+```
+
+### Тестирование обработки ошибок
+
+Для тестирования обработки ошибок 500 используйте:
 
 ```bash
 # Тест общей ошибки
 curl -X GET "http://localhost:8000/api/crud/groups/test-error/" \
-  -H "Authorization: Bearer your-token"
+  -H "Authorization: Bearer YOUR_TOKEN"
 
-# Тест ошибки деления на ноль
+# Тест ошибки деления на ноль  
 curl -X GET "http://localhost:8000/api/crud/groups/test-error/?type=division" \
-  -H "Authorization: Bearer your-token"
+  -H "Authorization: Bearer YOUR_TOKEN"
 
 # Тест ошибки атрибута
 curl -X GET "http://localhost:8000/api/crud/groups/test-error/?type=attribute" \
-  -H "Authorization: Bearer your-token"
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-## Примеры использования
+## 🧪 Тестирование API
 
-### Создание группы с последующим добавлением сессий
+### Подготовка к тестированию
 
-1. **Создать группу:**
+1. Создайте API токен в админ панели
+2. Убедитесь, что сервер запущен на `http://localhost:8000`
+3. Установите переменную окружения:
+
 ```bash
-curl -X POST http://localhost:8000/api/crud/groups/ \
-  -H "Authorization: Bearer your-api-token-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "groupId": 12345,
-    "groupUnique": "DEMO123",
-    "courseName": "Демо курс",
-    "supervisorName": "Демо Тренер",
-    "supervisorIIN": "123456789012",
-    "startingDate": "2024-01-01T00:00:00",
-    "endingDate": "2024-01-31T00:00:00",
-    "listenersList": [
-      {
-        "iin": "987654321098",
-        "surname": "ДЕМО",
-        "name": "УЧАСТНИК",
-        "email": "demo@example.com"
-      }
-    ],
-    "daysforAttendence": [
-      "2024-01-01T00:00:00",
-      "2024-01-02T00:00:00"
-    ]
-  }'
+export API_TOKEN=your-actual-api-token
 ```
 
-2. **Обновить участников:**
-```bash
-curl -X PATCH http://localhost:8000/api/crud/groups/DEMO123/ \
-  -H "Authorization: Bearer your-api-token-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "listenersList": [
-      {
-        "iin": "987654321098",
-        "surname": "ДЕМО",
-        "name": "УЧАСТНИК",
-        "email": "demo@example.com"
-      },
-      {
-        "iin": "111111111111",
-        "surname": "НОВЫЙ",
-        "name": "УЧАСТНИК",
-        "email": "new@example.com"
-      }
-    ]
-  }'
-```
+### Автоматическое тестирование
 
-3. **Обновить сессии:**
-```bash
-curl -X PATCH http://localhost:8000/api/crud/groups/DEMO123/ \
-  -H "Authorization: Bearer your-api-token-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "daysforAttendence": [
-      "2024-01-01T00:00:00",
-      "2024-01-02T00:00:00",
-      "2024-01-03T00:00:00"
-    ]
-  }'
-```
-
-## Тестирование
-
-Для тестирования API используйте приложенный скрипт `test_groups_api.py`:
-
-### Подготовка
-
-1. Создайте API токен в админ панели: `http://localhost:8000/admin/core/apitoken/`
-2. Установите переменную окружения с токеном:
-   ```bash
-   export API_TOKEN=your-actual-api-token
-   ```
-   
-   Или измените токен в файле `test_groups_api.py` напрямую:
-   ```python
-   API_TOKEN = "your-actual-api-token"
-   ```
-
-### Запуск тестов
+Используйте приложенный скрипт `test_groups_api.py`:
 
 ```bash
-# Убедитесь, что сервер запущен
-python manage.py runserver
-
-# В другом терминале запустите тесты
 python test_groups_api.py
 ```
 
-### Что тестируется
+Скрипт проверит:
+- ✅ Авторизацию и токен
+- ✅ Создание групп
+- ✅ Получение списка и отдельных групп  
+- ✅ Обновление участников и сессий
+- ✅ Обработку ошибок в JSON формате
 
-- ✅ Проверка авторизации и токена
-- ✅ Создание групп в формате miniresponse.json
-- ✅ Получение списка и отдельных групп
-- ✅ Обновление участников через listenersList
-- ✅ Обновление сессий через daysforAttendence
-- ✅ Частичное и полное обновление групп
+### Ручное тестирование
 
-## Структура файлов
+```bash
+# 1. Проверка подключения
+curl -X GET http://localhost:8000/api/crud/groups/ \
+  -H "Authorization: Bearer YOUR_TOKEN"
 
+# 2. Создание тестовой группы
+curl -X POST http://localhost:8000/api/crud/groups/ \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "groupId": 99999,
+    "groupUnique": "TEST001",
+    "courseName": "Тестовый курс",
+    "supervisorName": "Тестовый Тренер",
+    "supervisorIIN": "123456789012",
+    "startingDate": "2024-01-01T00:00:00",
+    "endingDate": "2024-01-31T00:00:00",
+    "listenersList": [],
+    "daysforAttendence": ["2024-01-01T00:00:00"]
+  }'
+
+# 3. Получение созданной группы
+curl -X GET http://localhost:8000/api/crud/groups/TEST001/ \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# 4. Удаление тестовой группы
+curl -X DELETE http://localhost:8000/api/crud/groups/TEST001/ \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## 📝 Важные особенности
+
+### Формат данных
+1. **Участники**: Используется `surname` + `name` вместо `full_name`
+2. **Даты**: Все даты в формате `"2025-07-11T00:00:00"`
+3. **Lookup**: Все операции по полю `code` (не `id`)
+4. **Автосоздание**: Участники и тренеры создаются автоматически
+
+### Автоматические процессы
+1. **Тренер**: Создается из `supervisorName`/`supervisorIIN`
+2. **Профили**: Участники получают профили `PersonProfile`  
+3. **Сессии**: Создаются из `daysforAttendence` с настройками по умолчанию
+4. **QR-коды**: Генерируются автоматически для каждой сессии
+
+### Производительность
+1. **Prefetch**: Связанные объекты предзагружаются
+2. **Pagination**: Поддерживается для больших списков
+3. **Validation**: Все данные валидируются перед сохранением
+
+## 🔗 Интеграция с вашим сервисом
+
+### Базовый клиент Python
+
+```python
+class OrleqrGroupsClient:
+    def __init__(self, base_url, api_token):
+        self.base_url = base_url.rstrip('/')
+        self.headers = {
+            'Authorization': f'Bearer {api_token}',
+            'Content-Type': 'application/json'
+        }
+    
+    def get_groups(self):
+        """Получить список всех групп"""
+        response = requests.get(f'{self.base_url}/api/crud/groups/', headers=self.headers)
+        return response.json()
+    
+    def get_group(self, code):
+        """Получить группу по коду"""
+        response = requests.get(f'{self.base_url}/api/crud/groups/{code}/', headers=self.headers)
+        return response.json()
+    
+    def create_group(self, group_data):
+        """Создать новую группу"""
+        response = requests.post(f'{self.base_url}/api/crud/groups/', json=group_data, headers=self.headers)
+        return response.json()
+    
+    def update_group(self, code, group_data, partial=True):
+        """Обновить группу"""
+        method = 'PATCH' if partial else 'PUT'
+        response = requests.request(method, f'{self.base_url}/api/crud/groups/{code}/', json=group_data, headers=self.headers)
+        return response.json()
+    
+    def delete_group(self, code):
+        """Удалить группу"""
+        response = requests.delete(f'{self.base_url}/api/crud/groups/{code}/', headers=self.headers)
+        return response.status_code == 204
+
+# Использование
+client = OrleqrGroupsClient('http://localhost:8000', 'YOUR_TOKEN')
+groups = client.get_groups()
+```
+
+### JavaScript/Node.js клиент
+
+```javascript
+class OrleqrGroupsClient {
+    constructor(baseUrl, apiToken) {
+        this.baseUrl = baseUrl.replace(/\/$/, '');
+        this.headers = {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json'
+        };
+    }
+    
+    async getGroups() {
+        const response = await fetch(`${this.baseUrl}/api/crud/groups/`, {
+            headers: this.headers
+        });
+        return await response.json();
+    }
+    
+    async getGroup(code) {
+        const response = await fetch(`${this.baseUrl}/api/crud/groups/${code}/`, {
+            headers: this.headers
+        });
+        return await response.json();
+    }
+    
+    async createGroup(groupData) {
+        const response = await fetch(`${this.baseUrl}/api/crud/groups/`, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(groupData)
+        });
+        return await response.json();
+    }
+    
+    async updateGroup(code, groupData, partial = true) {
+        const method = partial ? 'PATCH' : 'PUT';
+        const response = await fetch(`${this.baseUrl}/api/crud/groups/${code}/`, {
+            method: method,
+            headers: this.headers,
+            body: JSON.stringify(groupData)
+        });
+        return await response.json();
+    }
+    
+    async deleteGroup(code) {
+        const response = await fetch(`${this.baseUrl}/api/crud/groups/${code}/`, {
+            method: 'DELETE',
+            headers: this.headers
+        });
+        return response.status === 204;
+    }
+}
+
+// Использование
+const client = new OrleqrGroupsClient('http://localhost:8000', 'YOUR_TOKEN');
+const groups = await client.getGroups();
+```
+
+## 📞 Поддержка
+
+При возникновении проблем:
+
+1. **Проверьте токен**: Убедитесь, что токен действителен и имеет нужные права
+2. **Проверьте формат**: Все данные должны точно соответствовать `miniresponse.json`
+3. **Логи**: Проверьте логи сервера для детальной информации об ошибках
+4. **Тестирование**: Используйте `test_groups_api.py` для диагностики
+
+### Файлы проекта
 - `apps/groups/api.py` - ViewSet для API
-- `apps/groups/serializers.py` - Сериализаторы
-- `apps/groups/api_urls.py` - URL роутинг для API
-- `test_groups_api.py` - Тестовый скрипт
+- `apps/groups/serializers.py` - Сериализаторы данных
+- `apps/groups/api_urls.py` - URL маршруты
+- `test_groups_api.py` - Скрипт тестирования
 
-## Особенности реализации
+## 🆚 Совместимость
 
-1. **Формат miniresponse.json:** API принимает и возвращает данные ТОЧНО в том же формате, что и файл miniresponse.json
-2. **Lookup по коду:** Все операции выполняются через поле `code` вместо `id`
-3. **Единый CRUD:** Управление группами, участниками и сессиями через один API
-4. **Автоматическое создание профилей:** При добавлении участников/тренеров автоматически создаются профили PersonProfile
-5. **Формат участников:** `surname` + `name` вместо `full_name`
-6. **Формат дат:** `"2025-07-11T00:00:00"` для всех дат
-7. **Автоматические сессии:** Сессии создаются из `daysforAttendence` с настройками по умолчанию
-8. **Тренер из руководителя:** Тренер автоматически создается из `supervisorName`/`supervisorIIN`
-
-## Ключевые отличия от стандартного API
-
-- **Формат участников:** `listenersList` с полями `surname`, `name`, а не `full_name`
-- **Формат сессий:** `daysforAttendence` с датами в ISO формате
-- **Нет отдельных эндпоинтов:** Все управляется через основные CRUD операции
-- **Точное соответствие:** 100% совместимость с форматом miniresponse.json
-
-## Совместимость
-
-API совместим с существующим функционалом проекта и не нарушает работу существующих эндпоинтов в `/api/groups/`.
-Новый API доступен по адресу `/api/crud/groups/` и работает параллельно с существующим. 
+API работает параллельно с существующими эндпоинтами в `/api/groups/` и не нарушает существующий функционал. Новый API доступен по адресу `/api/crud/groups/` и полностью автономен. 
