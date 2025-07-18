@@ -82,6 +82,15 @@ class GroupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(_("Группа с таким кодом уже существует"))
         return value
     
+    def validate_groupId(self, value):
+        """Проверяем уникальность external_id группы"""
+        if self.instance and self.instance.external_id == value:
+            return value
+        
+        if value and Group.objects.filter(external_id=value).exists():
+            raise serializers.ValidationError(_("Группа с таким ID уже существует"))
+        return value
+    
     def to_representation(self, instance):
         """Преобразуем модель в JSON формат"""
         # Получаем базовое представление
@@ -181,7 +190,7 @@ class GroupSerializer(serializers.ModelSerializer):
                     'exit_start': time(hour=17),
                     'exit_end': time(hour=18),
                     'qr_token_entry': uuid.uuid4(),
-                    'qr_token_exit': uuid.uuid4() if group.track_exit else None,
+                    'qr_token_exit': uuid.uuid4(),
                 }
             )
         
@@ -235,7 +244,7 @@ class GroupSerializer(serializers.ModelSerializer):
                         'exit_start': time(hour=17),
                         'exit_end': time(hour=18),
                         'qr_token_entry': uuid.uuid4(),
-                        'qr_token_exit': uuid.uuid4() if instance.track_exit else None,
+                        'qr_token_exit': uuid.uuid4(),
                     }
                 )
         

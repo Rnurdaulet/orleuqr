@@ -91,7 +91,7 @@ class Command(BaseCommand):
                         "exit_start": EXIT_START,
                         "exit_end": EXIT_END,
                         "qr_token_entry": uuid.uuid4(),
-                        "qr_token_exit": uuid.uuid4() if group.track_exit else None,
+                        "qr_token_exit": uuid.uuid4(),
                     }
                 )
 
