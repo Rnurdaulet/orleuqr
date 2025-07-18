@@ -945,53 +945,80 @@
                 pdfTableBody.push(dataRow);
             });
             
-            // Вычисляем ширины колонок
-            const columnWidths = Array(exportData.headers.length).fill('*');
-            columnWidths[0] = 60; // Дата чуть шире
+                         // Вычисляем ширины колонок безопасно
+             const totalColumns = exportData.headers.length;
+             const columnWidths = [];
+             
+             if (totalColumns > 0) {
+                 // Первая колонка - дата
+                 columnWidths.push(60);
+                 
+                 // Остальные колонки равномерно
+                 const remainingColumns = totalColumns - 1;
+                 if (remainingColumns > 0) {
+                     const standardWidth = Math.max(40, 400 / remainingColumns);
+                     for (let i = 0; i < remainingColumns; i++) {
+                         columnWidths.push(standardWidth);
+                     }
+                 }
+             } else {
+                 // Если нет данных, создаем минимальную структуру
+                 columnWidths.push(100);
+             }
             
-            const docDefinition = {
-                pageOrientation: 'landscape',
-                pageSize: 'A4',
-                pageMargins: [20, 40, 20, 30],
-                content: [
-                    {
-                        text: 'Посещаемость участника: {{ participant.full_name|escapejs }}',
-                        style: 'header',
-                        alignment: 'center',
-                        margin: [0, 0, 0, 10]
-                    },
-                    {
-                        table: {
-                            headerRows: 1,
-                            widths: columnWidths,
-                            body: pdfTableBody
-                        },
-                        layout: {
-                            hLineWidth: function (i, node) {
-                                return i === 1 ? 1 : 0.3;
-                            },
-                            vLineWidth: function (i, node) {
-                                return 0.3;
-                            },
-                            hLineColor: function (i, node) {
-                                return i === 1 ? '#666666' : '#cccccc';
-                            },
-                            vLineColor: function (i, node) {
-                                return '#cccccc';
-                            }
-                        }
-                    }
-                ],
-                styles: {
-                    header: {
-                        fontSize: 12,
-                        bold: true
-                    }
-                },
-                defaultStyle: {
-                    fontSize: 7
-                }
-            };
+                         // Валидируем данные перед созданием PDF
+             if (!columnWidths || columnWidths.length === 0) {
+                 throw new Error('Не удалось определить ширины колонок');
+             }
+             
+             if (!pdfTableBody || pdfTableBody.length === 0) {
+                 throw new Error('Нет данных для экспорта');
+             }
+
+             const docDefinition = {
+                 pageOrientation: 'landscape',
+                 pageSize: 'A4',
+                 pageMargins: [20, 40, 20, 30],
+                 content: [
+                     {
+                         text: 'Посещаемость участника: {{ participant.full_name|escapejs }}',
+                         style: 'header',
+                         alignment: 'center',
+                         margin: [0, 0, 0, 10]
+                     },
+                     {
+                         table: {
+                             headerRows: 1,
+                             widths: columnWidths,
+                             body: pdfTableBody,
+                             keepWithHeaderRows: 1
+                         },
+                         layout: {
+                             hLineWidth: function (i, node) {
+                                 return i === 1 ? 1 : 0.3;
+                             },
+                             vLineWidth: function (i, node) {
+                                 return 0.3;
+                             },
+                             hLineColor: function (i, node) {
+                                 return i === 1 ? '#666666' : '#cccccc';
+                             },
+                             vLineColor: function (i, node) {
+                                 return '#cccccc';
+                             }
+                         }
+                     }
+                 ],
+                 styles: {
+                     header: {
+                         fontSize: 12,
+                         bold: true
+                     }
+                 },
+                 defaultStyle: {
+                     fontSize: 7
+                 }
+             };
 
             pdfMake.createPdf(docDefinition).download('Посещаемость_{{ participant.full_name|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.pdf');
             
@@ -1001,61 +1028,82 @@
         }
     }
 
-    function prepareExportData() {
-        const headers = ['Дата', 'Вход', 'Статус входа'];
-        
-        if (trackExit) {
-            headers.push('Выход', 'Статус выхода');
-        }
-        
-        headers.push('Доверие', 'Отметка вход');
-        
-        if (trackExit) {
-            headers.push('Отметка выход');
-        }
-        
-        headers.push('Действия');
-        
-        const rows = [];
-        
-        // Собираем данные из таблицы
-        const table = document.getElementById('participant-table');
-        const tbody = table.querySelector('tbody');
-        const tableRows = tbody.querySelectorAll('tr');
-        
-        tableRows.forEach(tr => {
-            const cells = tr.querySelectorAll('td');
-            const row = [];
-            
-            cells.forEach((cell, index) => {
-                let cellData = { text: cell.textContent.trim() };
-                
-                // Определяем цвет ячейки на основе содержимого
-                const badges = cell.querySelectorAll('.badge');
-                if (badges.length > 0) {
-                    const badge = badges[0];
-                    if (badge.classList.contains('bg-soft-success')) {
-                        cellData.fillColor = '#4CAF50';
-                        cellData.color = '#FFFFFF';
-                    } else if (badge.classList.contains('bg-soft-warning')) {
-                        cellData.fillColor = '#FF9800';
-                        cellData.color = '#FFFFFF';
-                    } else if (badge.classList.contains('bg-soft-info')) {
-                        cellData.fillColor = '#2196F3';
-                        cellData.color = '#FFFFFF';
-                    } else if (badge.classList.contains('bg-soft-danger')) {
-                        cellData.fillColor = '#F44336';
-                        cellData.color = '#FFFFFF';
-                    }
-                }
-                
-                row.push(cellData);
-            });
-            
-            rows.push(row);
-        });
-        
-        return { headers, rows };
-    }
+         function prepareExportData() {
+         const headers = ['Дата', 'Вход', 'Статус входа'];
+         
+         if (trackExit) {
+             headers.push('Выход', 'Статус выхода');
+         }
+         
+         headers.push('Доверие', 'Отметка вход');
+         
+         if (trackExit) {
+             headers.push('Отметка выход');
+         }
+         
+         headers.push('Действия');
+         
+         const rows = [];
+         
+         try {
+             // Собираем данные из таблицы
+             const table = document.getElementById('participant-table');
+             if (!table) {
+                 console.warn('Таблица не найдена');
+                 return { headers, rows: [] };
+             }
+             
+             const tbody = table.querySelector('tbody');
+             if (!tbody) {
+                 console.warn('Тело таблицы не найдено');
+                 return { headers, rows: [] };
+             }
+             
+             const tableRows = tbody.querySelectorAll('tr');
+             
+             tableRows.forEach(tr => {
+                 const cells = tr.querySelectorAll('td');
+                 const row = [];
+                 
+                 // Обеспечиваем соответствие количества ячеек заголовкам
+                 for (let i = 0; i < headers.length; i++) {
+                     let cellData = { text: '—' }; // Значение по умолчанию
+                     
+                     if (i < cells.length) {
+                         const cell = cells[i];
+                         cellData.text = cell.textContent.trim() || '—';
+                         
+                         // Определяем цвет ячейки на основе содержимого
+                         const badges = cell.querySelectorAll('.badge');
+                         if (badges.length > 0) {
+                             const badge = badges[0];
+                             if (badge.classList.contains('bg-soft-success')) {
+                                 cellData.fillColor = '#4CAF50';
+                                 cellData.color = '#FFFFFF';
+                             } else if (badge.classList.contains('bg-soft-warning')) {
+                                 cellData.fillColor = '#FF9800';
+                                 cellData.color = '#FFFFFF';
+                             } else if (badge.classList.contains('bg-soft-info')) {
+                                 cellData.fillColor = '#2196F3';
+                                 cellData.color = '#FFFFFF';
+                             } else if (badge.classList.contains('bg-soft-danger')) {
+                                 cellData.fillColor = '#F44336';
+                                 cellData.color = '#FFFFFF';
+                             }
+                         }
+                     }
+                     
+                     row.push(cellData);
+                 }
+                 
+                 rows.push(row);
+             });
+             
+         } catch (error) {
+             console.error('Ошибка при подготовке данных экспорта:', error);
+         }
+         
+         return { headers, rows };
+     }
     </script>
 {% endblock %}

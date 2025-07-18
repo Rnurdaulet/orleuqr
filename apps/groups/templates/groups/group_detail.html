@@ -1012,17 +1012,31 @@
             pdfTableBody.push(dataRow);
         });
         
-        // Вычисляем ширины колонок (каждая ячейка времени)
-        const totalDataColumns = exportData.subHeaders.length;
-        const participantWidth = 50;
-        const remainingWidth = 700;
-        const timeColumnWidth = Math.max(18, remainingWidth / (totalDataColumns - 1));
+        // Вычисляем ширины колонок безопасно
+        const totalDataColumns = Math.max(exportData.subHeaders.length, 1);
+        const columnWidths = [];
         
-        const columnWidths = [participantWidth];
-        for (let i = 1; i < totalDataColumns; i++) {
-            columnWidths.push(timeColumnWidth);
+        // Первая колонка - участник
+        columnWidths.push(60);
+        
+        // Остальные колонки - даты с временами
+        const remainingColumns = totalDataColumns - 1;
+        if (remainingColumns > 0) {
+            const timeColumnWidth = Math.max(25, 500 / remainingColumns);
+            for (let i = 0; i < remainingColumns; i++) {
+                columnWidths.push(timeColumnWidth);
+            }
         }
         
+        // Валидируем данные перед созданием PDF
+        if (!columnWidths || columnWidths.length === 0) {
+            throw new Error('Не удалось определить ширины колонок');
+        }
+        
+        if (!pdfTableBody || pdfTableBody.length === 0) {
+            throw new Error('Нет данных для экспорта');
+        }
+
         const docDefinition = {
             pageOrientation: 'landscape',
             pageSize: 'A3',
@@ -1038,7 +1052,8 @@
                     table: {
                         headerRows: 2,
                         widths: columnWidths,
-                        body: pdfTableBody
+                        body: pdfTableBody,
+                        keepWithHeaderRows: 1
                     },
                     layout: {
                         hLineWidth: function (i, node) {
@@ -1071,87 +1086,60 @@
     }
 
     function prepareExportData() {
-        const todayISO = new Date().toISOString().slice(0, 10);
-        
-        // Создаем двухуровневые заголовки
-        const topHeaders = ['Участник'];
-        const subHeaders = [''];
-        
-        // Добавляем "Сегодня" (если есть)
-        const todaySession = sessions.find(([_, date]) => date === todayISO);
-        if (todaySession) {
-            if (trackExit) {
-                topHeaders.push('Сегодня', '');
-                subHeaders.push('вход', 'выход');
-            } else {
-                topHeaders.push('Сегодня');
-                subHeaders.push('вход');
-            }
-        }
-        
-        // Добавляем остальные сессии
-        sessions.forEach(([sessionId, sessionDate]) => {
-            if (sessionDate !== todayISO) {
-                const formattedDate = formatDate(sessionDate);
+        try {
+            const todayISO = new Date().toISOString().slice(0, 10);
+            
+            // Создаем двухуровневые заголовки
+            const topHeaders = ['Участник'];
+            const subHeaders = [''];
+            
+            // Добавляем "Сегодня" (если есть)
+            const todaySession = sessions.find(([_, date]) => date === todayISO);
+            if (todaySession) {
                 if (trackExit) {
-                    topHeaders.push(formattedDate, '');
+                    topHeaders.push('Сегодня', '');
                     subHeaders.push('вход', 'выход');
                 } else {
-                    topHeaders.push(formattedDate);
+                    topHeaders.push('Сегодня');
                     subHeaders.push('вход');
                 }
             }
-        });
-
-        // Создаем строки данных
-        const rows = [];
-        participants.forEach(participant => {
-            const row = [{ text: participant.name }];
             
-            // Добавляем данные "Сегодня"
-            if (todaySession) {
-                const todayAttendance = participant.attendance[todaySession[0]];
-                if (todayAttendance) {
-                    // Вход
-                    row.push(formatExportCell(
-                        todayAttendance.arrived_at,
-                        todayAttendance.arrived_status,
-                        todayAttendance.marked_entry
-                    ));
-                    // Выход (только если отслеживается)
-                    if (trackExit) {
-                        row.push(formatExportCell(
-                            todayAttendance.left_at,
-                            todayAttendance.left_status,
-                            todayAttendance.marked_exit
-                        ));
-                    }
-                } else {
-                    if (trackExit) {
-                        row.push({ text: '--' }, { text: '--' });
-                    } else {
-                        row.push({ text: '--' });
-                    }
-                }
-            }
-            
-            // Добавляем данные остальных сессий
+            // Добавляем остальные сессии
             sessions.forEach(([sessionId, sessionDate]) => {
                 if (sessionDate !== todayISO) {
-                    const attendance = participant.attendance[sessionId];
-                    if (attendance) {
+                    const formattedDate = formatDate(sessionDate);
+                    if (trackExit) {
+                        topHeaders.push(formattedDate, '');
+                        subHeaders.push('вход', 'выход');
+                    } else {
+                        topHeaders.push(formattedDate);
+                        subHeaders.push('вход');
+                    }
+                }
+            });
+
+            // Создаем строки данных
+            const rows = [];
+            participants.forEach(participant => {
+                const row = [{ text: participant.name || 'Неизвестно' }];
+                
+                // Добавляем данные "Сегодня"
+                if (todaySession) {
+                    const todayAttendance = participant.attendance[todaySession[0]];
+                    if (todayAttendance) {
                         // Вход
                         row.push(formatExportCell(
-                            attendance.arrived_at,
-                            attendance.arrived_status,
-                            attendance.marked_entry
+                            todayAttendance.arrived_at,
+                            todayAttendance.arrived_status,
+                            todayAttendance.marked_entry
                         ));
                         // Выход (только если отслеживается)
                         if (trackExit) {
                             row.push(formatExportCell(
-                                attendance.left_at,
-                                attendance.left_status,
-                                attendance.marked_exit
+                                todayAttendance.left_at,
+                                todayAttendance.left_status,
+                                todayAttendance.marked_exit
                             ));
                         }
                     } else {
@@ -1162,12 +1150,68 @@
                         }
                     }
                 }
+                
+                // Добавляем данные остальных сессий
+                sessions.forEach(([sessionId, sessionDate]) => {
+                    if (sessionDate !== todayISO) {
+                        const attendance = participant.attendance[sessionId];
+                        if (attendance) {
+                            // Вход
+                            row.push(formatExportCell(
+                                attendance.arrived_at,
+                                attendance.arrived_status,
+                                attendance.marked_entry
+                            ));
+                            // Выход (только если отслеживается)
+                            if (trackExit) {
+                                row.push(formatExportCell(
+                                    attendance.left_at,
+                                    attendance.left_status,
+                                    attendance.marked_exit
+                                ));
+                            }
+                        } else {
+                            if (trackExit) {
+                                row.push({ text: '--' }, { text: '--' });
+                            } else {
+                                row.push({ text: '--' });
+                            }
+                        }
+                    }
+                });
+                
+                // Убеждаемся, что количество элементов в строке соответствует заголовкам
+                const expectedLength = subHeaders.length;
+                while (row.length < expectedLength) {
+                    row.push({ text: '--' });
+                }
+                while (row.length > expectedLength) {
+                    row.pop();
+                }
+                
+                rows.push(row);
             });
-            
-            rows.push(row);
-        });
 
-        return { topHeaders, subHeaders, rows };
+            // Проверяем, что у нас есть данные
+            if (topHeaders.length === 0) {
+                topHeaders.push('Нет данных');
+                subHeaders.push('');
+            }
+            
+            if (rows.length === 0) {
+                rows.push([{ text: 'Нет участников' }]);
+            }
+
+            return { topHeaders, subHeaders, rows };
+            
+        } catch (error) {
+            console.error('Ошибка при подготовке данных экспорта:', error);
+            return { 
+                topHeaders: ['Ошибка'], 
+                subHeaders: [''], 
+                rows: [[{ text: 'Ошибка при подготовке данных' }]] 
+            };
+        }
     }
 
     function formatExportCell(time, status, isManual) {
