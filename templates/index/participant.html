@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Панель участника - Система учета посещений | ОРЛЕУ{% endblock %}
+{% block title %}Панель участника - Система учета посещений | Өрлеу{% endblock %}
 
 {% block content %}
     <!-- Content -->
@@ -16,7 +16,7 @@
                 </div>
                 <div class="col-sm-auto">
                     <div class="d-flex gap-2">
-                        <a class="btn btn-primary" href="/qr/scan/">
+                        <a class="btn btn-primary" href="{% url 'qr_scan' %}">
                             <i class="bi-qr-code-scan me-1"></i> Сканировать QR
                         </a>
                     </div>
@@ -27,7 +27,7 @@
 
         <!-- Stats for Participants -->
         <div class="row justify-content-center">
-            <div class="col-sm-6 col-lg-4 mb-3 mb-lg-5">
+            <div class="col-6 col-lg-4 mb-3 mb-lg-5">
                 <!-- Card -->
                 <div class="card h-100">
                     <div class="card-body">
@@ -48,7 +48,7 @@
                 <!-- End Card -->
             </div>
 
-            <div class="col-sm-6 col-lg-4 mb-3 mb-lg-5">
+            <div class="col-6 col-lg-4 mb-3 mb-lg-5">
                 <!-- Card -->
                 <div class="card h-100">
                     <div class="card-body">
@@ -81,7 +81,7 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <a href="/qr/scan/" class="btn btn-primary btn-lg w-100">
+                                <a href="{% url 'qr_scan' %}" class="btn btn-primary btn-lg w-100">
                                     <i class="bi-qr-code-scan me-2"></i>
                                     Сканировать QR код
                                 </a>
@@ -107,15 +107,46 @@
                         <h4 class="card-header-title">Последняя активность</h4>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <i class="bi-clock-history fs-3 text-muted"></i>
+                        {% if user_profile.groups.exists %}
+                            {% for group in user_profile.groups.all|slice:":3" %}
+                                <div class="d-flex align-items-center mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar avatar-sm avatar-soft-success avatar-circle">
+                                            <span class="avatar-initials">{{ group.code|slice:":2"|upper }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">{{ group.code }} — {{ group.course_name|truncatechars:30 }}</h6>
+                                        <small class="text-muted">
+                                            <i class="bi-calendar-event me-1"></i>
+                                            {{ group.start_date|date:"d.m.Y" }} — {{ group.end_date|date:"d.m.Y" }}
+                                        </small>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <small class="badge bg-soft-primary text-primary">
+                                            {{ group.sessions.count }} занятий
+                                        </small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            {% if user_profile.groups.count > 3 %}
+                                <div class="text-center">
+                                    <a href="{% url 'groups:my_groups' %}" class="btn btn-soft-primary btn-sm">
+                                        Показать все группы ({{ user_profile.groups.count }})
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="bi-info-circle fs-3 text-muted"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0">Вы пока не записаны ни в одну группу</p>
+                                    <small class="text-muted">Обратитесь к администратору для записи в группы</small>
+                                </div>
                             </div>
-                            <div class="flex-grow-1 ms-3">
-                                <p class="mb-0">Ваша последняя активность будет отображаться здесь</p>
-                                <small class="text-muted">Сканируйте QR-коды для отметки посещения</small>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Панель тренера - Система учета посещений | ОРЛЕУ{% endblock %}
+{% block title %}Панель тренера - Система учета посещений | Өрлеу{% endblock %}
 
 {% block content %}
     <!-- Content -->
@@ -27,7 +27,7 @@
 
         <!-- Stats for Trainers/Admins -->
         <div class="row">
-            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+            <div class="col-6 col-lg-3 mb-3 mb-lg-5">
                 <!-- Card -->
                 <div class="card h-100">
                     <div class="card-body">
@@ -47,7 +47,7 @@
                 <!-- End Card -->
             </div>
 
-            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+            <div class="col-6 col-lg-3 mb-3 mb-lg-5">
                 <!-- Card -->
                 <div class="card h-100">
                     <div class="card-body">
@@ -67,7 +67,7 @@
                 <!-- End Card -->
             </div>
 
-            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+            <div class="col-6 col-lg-3 mb-3 mb-lg-5">
                 <!-- Card -->
                 <div class="card h-100">
                     <div class="card-body">
@@ -87,7 +87,7 @@
                 <!-- End Card -->
             </div>
 
-            <div class="col-sm-6 col-lg-3 mb-3 mb-lg-5">
+            <div class="col-6 col-lg-3 mb-3 mb-lg-5">
                 <!-- Card -->
                 <div class="card h-100">
                     <div class="card-body">
@@ -119,15 +119,54 @@
                         <h4 class="card-header-title">Последняя активность</h4>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <i class="bi-activity fs-3 text-muted"></i>
+                        {% if user_profile.trainer_groups.exists %}
+                            {% for group in user_profile.trainer_groups.all|slice:":3" %}
+                                <div class="d-flex align-items-center mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar avatar-sm avatar-soft-primary avatar-circle">
+                                            <span class="avatar-initials">{{ group.code|slice:":2"|upper }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">{{ group.code }} — {{ group.course_name|truncatechars:30 }}</h6>
+                                        <div class="row text-sm">
+                                            <div class="col-sm-6">
+                                                <small class="text-muted">
+                                                    <i class="bi-people me-1"></i>{{ group.participants.count }} участников
+                                                </small>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <small class="text-muted">
+                                                    <i class="bi-calendar me-1"></i>{{ group.sessions.count }} занятий
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <a href="{% url 'groups:group_detail' group.id %}" class="btn btn-outline-primary btn-sm">
+                                            Перейти
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            {% if user_profile.trainer_groups.count > 3 %}
+                                <div class="text-center">
+                                    <a href="{% url 'groups:trainer_groups' %}" class="btn btn-soft-primary btn-sm">
+                                        Показать все группы ({{ user_profile.trainer_groups.count }})
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="flex-shrink-0">
+                                    <i class="bi-info-circle fs-3 text-muted"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0">У вас пока нет назначенных групп</p>
+                                    <small class="text-muted">Обратитесь к администратору для получения доступа к группам</small>
+                                </div>
                             </div>
-                            <div class="flex-grow-1 ms-3">
-                                <p class="mb-0">Активность по вашим группам будет отображаться здесь</p>
-                                <small class="text-muted">Отслеживайте посещаемость и создавайте новые сессии</small>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

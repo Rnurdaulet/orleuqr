@@ -28,9 +28,17 @@ def mark_qr_page(request, token):
         )
 
         if success == "already_marked":
-            return render(request, "qr/mark_already.html", {"attendance": result, "status": status})
+            return render(request, "qr/mark_already.html", {
+                "attendance": result, 
+                "status": status, 
+                "group": result.session.group
+            })
         elif success:
-            return render(request, "qr/mark_success.html", {"attendance": result, "status": status})
+            return render(request, "qr/mark_success.html", {
+                "attendance": result, 
+                "status": status, 
+                "group": result.session.group
+            })
         else:
             return render(request, "qr/mark_invalid.html", {"reason": result, "status": status})
     except Exception as e:
@@ -68,12 +76,17 @@ def mark_qr_exit_page(request, token):
         )
 
         if success == "already_marked":
-            return render(request, "qr/mark_already.html", {"attendance": result, "status": status})
+            return render(request, "qr/mark_already.html", {
+                "attendance": result, 
+                "status": status, 
+                "group": result.session.group
+            })
         elif success:
             return render(request, "qr/mark_success.html", {
                 "attendance": result,
                 "is_exit": True,
                 "status": status,
+                "group": result.session.group
             })
         else:
             return render(request, "qr/mark_invalid.html", {"reason": result, "status": status})
@@ -90,4 +103,13 @@ def mark_qr_exit_page(request, token):
 
 @sso_login_required
 def qr_scan_page(request):
-    return render(request, "qr/scan.html")
+    profile = getattr(request, "user_profile", None)
+    
+    # Проверяем, есть ли у пользователя группы с track_exit
+    has_exit_groups = False
+    if profile:
+        has_exit_groups = profile.groups.filter(track_exit=True).exists()
+    
+    return render(request, "qr/scan.html", {
+        "has_exit_groups": has_exit_groups
+    })

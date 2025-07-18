@@ -51,8 +51,8 @@
                   </div>
                 {% endif %}
                 
-                <!-- Время выхода (показываем только если это выход И есть время выхода) -->
-                {% if is_exit and attendance.left_at %}
+                <!-- Время выхода (показываем только если это выход И есть время выхода И группа отслеживает выходы) -->
+                {% if is_exit and attendance.left_at and group.track_exit %}
                   <div class="col-12">
                     <div class="d-flex align-items-center justify-content-between">
                       <div class="d-flex align-items-center">

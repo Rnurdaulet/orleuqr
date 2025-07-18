@@ -18,7 +18,11 @@
                 </div>
               </div>
               <h2 class="h3 fw-bold text-primary mb-3">
-                Подготовка к отметке
+                {% if mode == 'exit' %}
+                  Подготовка к отметке выхода
+                {% else %}
+                  Подготовка к отметке
+                {% endif %}
               </h2>
               <p class="text-muted mb-4">
                 Определяем данные устройства для безопасной аутентификации
@@ -103,7 +107,7 @@
       const url = new URL(window.location.href);
       url.searchParams.set("fp", fingerprint);
       
-      progressText.textContent = 'Переходим к отметке...';
+      progressText.textContent = {% if mode == 'exit' %}'Переходим к отметке выхода...'{% else %}'Переходим к отметке...'{% endif %};
       
       // Small delay for better UX
       await new Promise(resolve => setTimeout(resolve, 500));

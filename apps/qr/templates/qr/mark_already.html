@@ -38,30 +38,32 @@
                   </div>
                 </div>
 
-                {% if attendance.left_at %}
-                  <div class="col-12">
-                    <div class="d-flex align-items-center justify-content-between">
-                      <div class="d-flex align-items-center">
-                        <i class="bi-box-arrow-right text-info me-2"></i>
-                        <span class="fw-medium">{% trans "Время ухода:" %}</span>
+                {% if group.track_exit %}
+                  {% if attendance.left_at %}
+                    <div class="col-12">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                          <i class="bi-box-arrow-right text-info me-2"></i>
+                          <span class="fw-medium">{% trans "Время ухода:" %}</span>
+                        </div>
+                        <span class="badge bg-info">
+                          {{ attendance.left_at|date:"d.m.Y H:i" }}
+                        </span>
                       </div>
-                      <span class="badge bg-info">
-                        {{ attendance.left_at|date:"d.m.Y H:i" }}
-                      </span>
                     </div>
-                  </div>
-                {% else %}
-                  <div class="col-12">
-                    <div class="d-flex align-items-center justify-content-between">
-                      <div class="d-flex align-items-center">
-                        <i class="bi-clock text-muted me-2"></i>
-                        <span class="fw-medium text-muted">{% trans "Уход:" %}</span>
+                  {% else %}
+                    <div class="col-12">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                          <i class="bi-clock text-muted me-2"></i>
+                          <span class="fw-medium text-muted">{% trans "Уход:" %}</span>
+                        </div>
+                        <span class="badge bg-secondary">
+                          {% trans "Не зафиксирован" %}
+                        </span>
                       </div>
-                      <span class="badge bg-secondary">
-                        {% trans "Не зафиксирован" %}
-                      </span>
                     </div>
-                  </div>
+                  {% endif %}
                 {% endif %}
               </div>
             </div>
