@@ -82,7 +82,7 @@
                     </button>
 
                     <button class="btn btn-white" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasColumnsFilter" aria-controls="offcanvasColumnsFilter">
-                        <i class="bi-table me-1"></i> Колонки <span class="badge bg-soft-dark text-dark rounded-circle ms-1">4</span>
+                        <i class="bi-table me-1"></i> Колонки <span class="badge bg-soft-dark text-dark rounded-circle ms-1" id="columns-badge">2</span>
                     </button>
                 </div>
             </div>
@@ -568,7 +568,8 @@
 
         // Динамическое создание переключателей колонок для сессий
         createDynamicColumnToggles();
-        updateColumnsBadge(); // Инициализация badge
+        // Инициализация badge с правильным количеством колонок
+        updateColumnsBadge();
 
         // Column toggle functionality с делегированными событиями
         $(document).on('change', '.column-toggle', function (e) {
@@ -576,6 +577,17 @@
             datatable.columns(columnIndex).visible(e.target.checked);
             updateColumnsBadge();
             setTimeout(() => initializeTooltips(), 100); // Реинициализируем tooltips
+        });
+
+        // Обработчики для статических переключателей колонок
+        $('#toggleColumn_participant').change(function (e) {
+            datatable.columns(0).visible(e.target.checked);
+            updateColumnsBadge();
+        });
+
+        $('#toggleColumn_today').change(function (e) {
+            datatable.columns(1).visible(e.target.checked);
+            updateColumnsBadge();
         });
 
         // Initialize TomSelect
@@ -668,8 +680,10 @@
     function createDynamicColumnToggles() {
         const dynamicContainer = document.getElementById('dynamic-columns');
         
+        // Рассчитываем правильные индексы с учетом trackExit
+        let currentColumnIndex = 2; // Начинаем после "Участник" (0) и "Сегодня" (1)
+        
         sessions.forEach(([sessionId, sessionDate], index) => {
-            const columnIndex = index + 2; // 0=Участник, 1=Сегодня, 2+=Сессии
             const sessionLabel = formatDate(sessionDate);
             
             const toggleHtml = '<label class="row form-check form-switch" for="toggleColumn_session_' + sessionId + '">' +
@@ -677,29 +691,49 @@
                 '<span class="me-2">' + sessionLabel + '</span>' +
                 '</span>' +
                 '<span class="col-4 col-sm-3 text-end">' +
-                '<input type="checkbox" class="form-check-input column-toggle" id="toggleColumn_session_' + sessionId + '" checked data-column="' + columnIndex + '">' +
+                '<input type="checkbox" class="form-check-input column-toggle" id="toggleColumn_session_' + sessionId + '" checked data-column="' + currentColumnIndex + '">' +
                 '</span>' +
                 '</label>';
             
             dynamicContainer.innerHTML += toggleHtml;
+            
+            // Увеличиваем индекс на 1 (если только вход) или на 2 (если вход+выход)
+            currentColumnIndex += trackExit ? 2 : 1;
         });
     }
 
     function updateColumnsBadge() {
-        const visibleColumns = document.querySelectorAll('.column-toggle:checked').length;
-        const badge = document.querySelector('.badge.bg-soft-dark.rounded-circle');
+        // Считаем все переключатели колонок, включая статические
+        const staticToggles = document.querySelectorAll('#toggleColumn_participant:checked, #toggleColumn_today:checked').length;
+        const dynamicToggles = document.querySelectorAll('.column-toggle:checked').length;
+        const totalVisible = staticToggles + dynamicToggles;
+        
+        const badge = document.querySelector('#columns-badge');
         if (badge) {
-            badge.textContent = visibleColumns;
+            badge.textContent = totalVisible;
         }
     }
 
     function resetColumns() {
+        // Сбрасываем статические переключатели
+        const staticToggles = document.querySelectorAll('#toggleColumn_participant, #toggleColumn_today');
+        staticToggles.forEach(toggle => {
+            toggle.checked = true;
+        });
+        
+        // Сбрасываем динамические переключатели
         document.querySelectorAll('.column-toggle').forEach(toggle => {
             toggle.checked = true;
             const columnIndex = parseInt(toggle.getAttribute('data-column'));
             const datatable = HSCore.components.HSDatatables.getItem('datatable');
             datatable.columns(columnIndex).visible(true);
         });
+        
+        // Показываем статические колонки
+        const datatable = HSCore.components.HSDatatables.getItem('datatable');
+        datatable.columns(0).visible(true); // Участник
+        datatable.columns(1).visible(true); // Сегодня
+        
         updateColumnsBadge();
     }
 
@@ -725,6 +759,9 @@
             worksheet.addRow(rowData);
         });
         
+        // Определяем максимальное количество колонок заранее
+        const maxColumns = Math.max(exportData.topHeaders.length, exportData.subHeaders.length);
+        
         // Настраиваем объединение ячеек безопасно
         try {
             // Объединяем ячейку "Участник" (A1:A2)
@@ -749,7 +786,6 @@
         }
         
         // Устанавливаем ширину колонок безопасно
-        const maxColumns = Math.max(exportData.topHeaders.length, exportData.subHeaders.length);
         
         // Устанавливаем ширину для участника
         if (worksheet.getColumn(1)) {
@@ -967,16 +1003,28 @@
                     rowSpan: 2
                 });
             } else if (header !== '') {
-                // Даты объединяют 2 колонки
-                firstHeaderRow.push({
-                    text: header,
-                    fillColor: '#f8f9fa',
-                    bold: true,
-                    alignment: 'center',
-                    fontSize: 7,
-                    colSpan: 2
-                });
-                firstHeaderRow.push({}); // Пустая ячейка для colSpan
+                if (trackExit) {
+                    // Если отслеживается выход - даты объединяют 2 колонки
+                    firstHeaderRow.push({
+                        text: header,
+                        fillColor: '#f8f9fa',
+                        bold: true,
+                        alignment: 'center',
+                        fontSize: 7,
+                        colSpan: 2
+                    });
+                    firstHeaderRow.push({}); // Пустая ячейка для colSpan
+                } else {
+                    // Если выход не отслеживается - каждая дата занимает 1 колонку
+                    firstHeaderRow.push({
+                        text: header,
+                        fillColor: '#f8f9fa',
+                        bold: true,
+                        alignment: 'center',
+                        fontSize: 7,
+                        rowSpan: 2
+                    });
+                }
             }
         });
         
@@ -986,7 +1034,8 @@
             if (index === 0) {
                 // Пропускаем первую ячейку (она объединена с верхней)
                 secondHeaderRow.push({});
-            } else {
+            } else if (trackExit) {
+                // Если отслеживается выход - добавляем подзаголовки
                 secondHeaderRow.push({
                     text: header,
                     fillColor: '#e9ecef',
@@ -995,6 +1044,7 @@
                     fontSize: 6
                 });
             }
+            // Если выход не отслеживается - не добавляем подзаголовки (они объединены с основными)
         });
         
         pdfTableBody.push(firstHeaderRow);
