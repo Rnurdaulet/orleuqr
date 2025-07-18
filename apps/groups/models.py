@@ -30,7 +30,7 @@ class Group(models.Model):
     )
     track_exit = models.BooleanField(
         _("Отслеживать выход"),
-        default=True,
+        default=False,
         help_text=_("Если включено, участники должны отмечаться как на входе, так и на выходе. Если выключено - только вход"),
     )
 
