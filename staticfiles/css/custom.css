@@ -43,6 +43,16 @@ footer {
 }
 
 /* Изящные стили для аватаров */
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-radius: 50%;
+    overflow: visible;
+    flex-shrink: 0;
+}
+
 .avatar.avatar-circle {
     box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.8);
@@ -50,6 +60,64 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
+}
+
+/* Размеры аватаров - важно для правильного отображения */
+.avatar.avatar-sm {
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+    min-height: 2rem;
+}
+
+.avatar.avatar-md {
+    width: 3rem;
+    height: 3rem;
+    min-width: 3rem;
+    min-height: 3rem;
+}
+
+.avatar.avatar-lg {
+    width: 4rem;
+    height: 4rem;
+    min-width: 4rem;
+    min-height: 4rem;
+}
+
+/* Стили для статуса аватара */
+.avatar-status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background-color: #00c9db;
+    z-index: 1;
+}
+
+.avatar-status.avatar-sm-status {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-width: 1px;
+}
+
+.avatar-status.avatar-status-success {
+    background-color: #00c9db;
+}
+
+.avatar-status.avatar-status-online {
+    background-color: #28a745;
+}
+
+.avatar-status.avatar-status-warning {
+    background-color: #ffc107;
+}
+
+.avatar-status.avatar-status-danger {
+    background-color: #dc3545;
 }
 
 .avatar.avatar-circle:hover {
@@ -58,9 +126,8 @@ footer {
 }
 
 /* Улучшенные инициалы */
-.avatar.avatar-circle .avatar-initials {
+.avatar .avatar-initials {
     font-weight: 600;
-    font-size: 0.75rem;
     text-align: center;
     line-height: 1;
     display: flex;
@@ -68,6 +135,20 @@ footer {
     justify-content: center;
     width: 100%;
     height: 100%;
+    border-radius: 50%;
+}
+
+/* Размеры текста для разных аватаров */
+.avatar.avatar-sm .avatar-initials {
+    font-size: 0.75rem;
+}
+
+.avatar.avatar-md .avatar-initials {
+    font-size: 1rem;
+}
+
+.avatar.avatar-lg .avatar-initials {
+    font-size: 1.25rem;
 }
 
 /* Цветовые варианты для разных букв (без градиентов!) */
@@ -155,4 +236,30 @@ footer {
     .welcome-section {
         padding: 1.5rem;
     }
+}
+
+/* Цветовое кодирование для экспорта таблиц */
+.export-cell-on-time {
+    background-color: #d1edff !important;
+    color: #0d6efd !important;
+}
+
+.export-cell-too-late {
+    background-color: #fff3cd !important;
+    color: #664d03 !important;
+}
+
+.export-cell-too-early {
+    background-color: #cff4fc !important;
+    color: #055160 !important;
+}
+
+.export-cell-unknown {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+}
+
+.export-cell-manual {
+    background-color: #e7f3ff !important;
+    color: #0c5aa6 !important;
 } 

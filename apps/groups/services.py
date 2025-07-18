@@ -28,13 +28,14 @@ def generate_session_qr_files(session_id):
         filename_entry = f"{session.id}_entry_{localtime().strftime('%Y%m%d')}.svg"
         session.qr_file_entry.save(filename_entry, ContentFile(buffer_entry.read()), save=False)
 
-        # SVG QR выход
-        buffer_exit = BytesIO()
-        qr_exit = segno.make(leave_url)
-        qr_exit.save(buffer_exit, kind='svg')
-        buffer_exit.seek(0)
-        filename_exit = f"{session.id}_exit_{localtime().strftime('%Y%m%d')}.svg"
-        session.qr_file_exit.save(filename_exit, ContentFile(buffer_exit.read()), save=False)
+        # SVG QR выход - только если группа отслеживает выход
+        if session.group.track_exit:
+            buffer_exit = BytesIO()
+            qr_exit = segno.make(leave_url)
+            qr_exit.save(buffer_exit, kind='svg')
+            buffer_exit.seek(0)
+            filename_exit = f"{session.id}_exit_{localtime().strftime('%Y%m%d')}.svg"
+            session.qr_file_exit.save(filename_exit, ContentFile(buffer_exit.read()), save=False)
 
         session.save()
         logger.info(f"SVG QR-codes generated and saved for session id={session_id}")
@@ -75,6 +76,11 @@ def generate_session_qr_pdf_on_fly(session_id, mode='entry'):
         session = Session.objects.get(id=session_id)
     except Session.DoesNotExist:
         logger.error(f"Session with id={session_id} does not exist.")
+        return None
+
+    # Проверяем, разрешен ли выход для этой группы
+    if mode == 'exit' and not session.group.track_exit:
+        logger.warning(f"Exit tracking is disabled for group {session.group.code}")
         return None
 
     # Собираем URL для QR

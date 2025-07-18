@@ -76,8 +76,10 @@
                                 <th>Дата</th>
                                 <th>Вход</th>
                                 <th>Статус входа</th>
+                                {% if group.track_exit %}
                                 <th>Выход</th>
                                 <th>Статус выхода</th>
+                                {% endif %}
                                 <th>Доверие</th>
                                 <th>Баллы</th>
                                 <th>Отметка тренером</th>
@@ -125,37 +127,39 @@
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if attendance and attendance.left_at %}
-                                                <span class="text-body">{{ attendance.left_at|localtime|time:"H:i" }}</span>
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if attendance %}
-                                                {% if attendance.left_status == 'on_time' %}
-                                                    <span class="badge bg-soft-success text-success">
-                                                        <i class="bi-check-circle me-1"></i>{{ attendance.get_left_status_display }}
-                                                    </span>
-                                                {% elif attendance.left_status == 'too_late' %}
-                                                    <span class="badge bg-soft-warning text-warning">
-                                                        <i class="bi-exclamation-circle me-1"></i>{{ attendance.get_left_status_display }}
-                                                    </span>
-                                                {% elif attendance.left_status == 'too_early' %}
-                                                    <span class="badge bg-soft-info text-info">
-                                                        <i class="bi-info-circle me-1"></i>{{ attendance.get_left_status_display }}
-                                                    </span>
-                                                {% else %}
-                                                    <span class="badge bg-soft-secondary text-secondary">
-                                                        <i class="bi-question-circle me-1"></i>{{ attendance.get_left_status_display }}
-                                                    </span>
-                                                {% endif %}
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
+                                                                </td>
+                        {% if group.track_exit %}
+                        <td>
+                            {% if attendance and attendance.left_at %}
+                                <span class="text-body">{{ attendance.left_at|localtime|time:"H:i" }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance %}
+                                {% if attendance.left_status == 'on_time' %}
+                                    <span class="badge bg-soft-success text-success">
+                                        <i class="bi-check-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                    </span>
+                                {% elif attendance.left_status == 'too_late' %}
+                                    <span class="badge bg-soft-warning text-warning">
+                                        <i class="bi-exclamation-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                    </span>
+                                {% elif attendance.left_status == 'too_early' %}
+                                    <span class="badge bg-soft-info text-info">
+                                        <i class="bi-info-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-soft-secondary text-secondary">
+                                        <i class="bi-question-circle me-1"></i>{{ attendance.get_left_status_display }}
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
                                         <td>
                                             {% if attendance %}
                                                 {% if attendance.trust_level == 'high' %}
@@ -193,7 +197,7 @@
                                                                 <i class="bi-person-check me-1"></i>Вход
                                                             </span>
                                                         {% endif %}
-                                                        {% if attendance.marked_exit_by_trainer %}
+                                                        {% if group.track_exit and attendance.marked_exit_by_trainer %}
                                                             <span class="badge bg-soft-info text-info">
                                                                 <i class="bi-person-check me-1"></i>Выход
                                                             </span>

@@ -27,6 +27,18 @@ class SessionSerializer(serializers.ModelSerializer):
             'qr_token_entry': {'read_only': True},
             'qr_token_exit': {'read_only': True},
         }
+    
+    def to_representation(self, instance):
+        """Исключаем поля выхода, если группа не отслеживает выход"""
+        ret = super().to_representation(instance)
+        
+        # Если группа не отслеживает выход, удаляем соответствующие поля
+        if not instance.group.track_exit:
+            ret.pop('exit_start', None)
+            ret.pop('exit_end', None)
+            ret.pop('qr_token_exit', None)
+            
+        return ret
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -169,7 +181,7 @@ class GroupSerializer(serializers.ModelSerializer):
                     'exit_start': time(hour=17),
                     'exit_end': time(hour=18),
                     'qr_token_entry': uuid.uuid4(),
-                    'qr_token_exit': uuid.uuid4(),
+                    'qr_token_exit': uuid.uuid4() if group.track_exit else None,
                 }
             )
         
@@ -223,7 +235,7 @@ class GroupSerializer(serializers.ModelSerializer):
                         'exit_start': time(hour=17),
                         'exit_end': time(hour=18),
                         'qr_token_entry': uuid.uuid4(),
-                        'qr_token_exit': uuid.uuid4(),
+                        'qr_token_exit': uuid.uuid4() if instance.track_exit else None,
                     }
                 )
         
@@ -241,12 +253,13 @@ class GroupListSerializer(serializers.ModelSerializer):
     endingDate = serializers.DateField(source='end_date', read_only=True)
     participantsCount = serializers.SerializerMethodField()
     trainersCount = serializers.SerializerMethodField()
+    trackExit = serializers.BooleanField(source='track_exit', read_only=True)
     
     class Meta:
         model = Group
         fields = [
             'groupId', 'groupUnique', 'courseName', 'supervisorName',
-            'startingDate', 'endingDate', 'participantsCount', 'trainersCount'
+            'startingDate', 'endingDate', 'participantsCount', 'trainersCount', 'trackExit'
         ]
     
     def get_participantsCount(self, obj):

@@ -189,6 +189,7 @@
                                         <!-- End Form Switch -->
 
                                         <!-- Form Switch -->
+                                        {% if group.track_exit %}
                                         <label class="row form-check form-switch" for="toggleColumn_exit">
                                             <span class="col-8 col-sm-9 ms-0">
                                                 <span class="me-2">Выход</span>
@@ -197,6 +198,7 @@
                                                 <input type="checkbox" class="form-check-input" id="toggleColumn_exit" checked>
                                             </span>
                                         </label>
+                                        {% endif %}
                                         <!-- End Form Switch -->
 
                                         <!-- Form Switch -->
@@ -249,11 +251,15 @@
                             <th>Дата</th>
                             <th>Вход</th>
                             <th>Статус входа</th>
+                            {% if group.track_exit %}
                             <th>Выход</th>
                             <th>Статус выхода</th>
+                            {% endif %}
                             <th>Доверие</th>
                             <th>Отметка вход</th>
+                            {% if group.track_exit %}
                             <th>Отметка выход</th>
+                            {% endif %}
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -300,6 +306,7 @@
                                             <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
+                                    {% if group.track_exit %}
                                     <td>
                                         {% if att and att.left_at %}
                                             <span class="text-body">{{ att.left_at|localtime|time:"H:i" }}</span>
@@ -330,6 +337,7 @@
                                             <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
+                                    {% endif %}
                                     <td>
                                         {% if att %}
                                             {% if att.trust_level == 'high' %}
@@ -363,6 +371,7 @@
                                             <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
+                                    {% if group.track_exit %}
                                     <td>
                                         {% if att and att.marked_exit_by_trainer %}
                                             <div class="d-flex align-items-center">
@@ -375,6 +384,7 @@
                                             <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
+                                    {% endif %}
                                     <td>
                                         {% if session.date == today %}
                                             <div class="btn-group" role="group">
@@ -601,9 +611,11 @@
                         <button id="mark-entry-btn" class="btn btn-success">
                             <i class="bi-box-arrow-in-right me-2"></i>Отметить вход
                         </button>
+                        {% if group.track_exit %}
                         <button id="mark-exit-btn" class="btn btn-danger">
                             <i class="bi-box-arrow-right me-2"></i>Отметить выход
                         </button>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -625,6 +637,8 @@
     <script src="{% static 'main/assets/vendor/jszip/dist/jszip.min.js' %}"></script>
     <script src="{% static 'main/assets/vendor/pdfmake/build/pdfmake.min.js' %}"></script>
     <script src="{% static 'main/assets/vendor/pdfmake/build/vfs_fonts.js' %}"></script>
+    <!-- SheetJS для создания Excel файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 
 
     <script>
@@ -636,17 +650,20 @@
                 {
                     extend: 'excel',
                     className: 'btn btn-outline-secondary me-2',
-                    text: '<i class="bi-file-earmark-excel me-1"></i> Excel'
+                    text: '<i class="bi-file-earmark-excel me-1"></i> Excel',
+                    action: function(e, dt, button, config) {
+                        exportToExcel();
+                    }
                 },
                 {
                     extend: 'pdf',
                     className: 'btn btn-outline-secondary me-2',
                     text: '<i class="bi-file-earmark-pdf me-1"></i> PDF',
-                    title: 'Посещаемость участника: {{ participant.user.first_name }} {{ participant.user.last_name }}',
+                    title: 'Посещаемость участника: {{ participant.full_name|escapejs }}',
                     orientation: 'landscape',
                     pageSize: 'A4',
-                    exportOptions: {
-                        columns: ':visible'
+                    action: function(e, dt, button, config) {
+                        exportToPDF();
                     }
                 }
             ],
@@ -703,6 +720,7 @@
             datatable.columns(2).visible(e.target.checked)
         });
 
+        {% if group.track_exit %}
         $('#toggleColumn_exit').change(function (e) {
             datatable.columns(3).visible(e.target.checked)
             datatable.columns(4).visible(e.target.checked)
@@ -716,6 +734,15 @@
             datatable.columns(6).visible(e.target.checked)
             datatable.columns(7).visible(e.target.checked)
         });
+        {% else %}
+        $('#toggleColumn_trust').change(function (e) {
+            datatable.columns(3).visible(e.target.checked)
+        });
+
+        $('#toggleColumn_marks').change(function (e) {
+            datatable.columns(4).visible(e.target.checked)
+        });
+        {% endif %}
 
         // Manual marking functionality
         let sessionId = null;
@@ -730,7 +757,9 @@
             attendanceId = btn.getAttribute("data-attendance-id");
 
             entryBtn.disabled = btn.getAttribute("data-disable-entry") === "1";
-            exitBtn.disabled = btn.getAttribute("data-disable-exit") === "1";
+            if (exitBtn) {
+                exitBtn.disabled = btn.getAttribute("data-disable-exit") === "1";
+            }
         });
 
         function sendMark(type) {
@@ -762,7 +791,9 @@
         }
 
         entryBtn.addEventListener("click", () => sendMark("entry"));
-        exitBtn.addEventListener("click", () => sendMark("exit"));
+        if (exitBtn) {
+            exitBtn.addEventListener("click", () => sendMark("exit"));
+        }
 
         // Initialize TomSelect
         HSCore.components.HSTomSelect.init('.js-select');
@@ -772,6 +803,259 @@
         document.querySelectorAll('.js-datatable-filter').forEach(el => el.checked = false);
         const datatable = HSCore.components.HSDatatables.getItem('participant-table');
         datatable.search('').columns().search('').draw();
+    }
+
+    // Константа для определения отслеживания выхода
+    const trackExit = {{ group.track_exit|yesno:"true,false" }};
+
+    // Функции экспорта
+    async function exportToExcel() {
+        try {
+            const exportData = prepareExportData();
+            
+            // Создаем новую книгу Excel
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Посещаемость участника');
+            
+            // Добавляем заголовки
+            worksheet.addRow(exportData.headers);
+            
+            // Добавляем данные
+            exportData.rows.forEach(row => {
+                worksheet.addRow(row.map(cell => cell.text || cell));
+            });
+            
+            // Устанавливаем ширину колонок безопасно
+            const maxColumns = exportData.headers.length;
+            for (let i = 1; i <= maxColumns; i++) {
+                const column = worksheet.getColumn(i);
+                if (column) {
+                    column.width = i === 1 ? 15 : 12; // Дата шире, остальные стандартно
+                }
+            }
+            
+            // Стили для заголовков
+            const headerStyle = {
+                font: { bold: true },
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FA' } },
+                alignment: { horizontal: 'center', vertical: 'middle' },
+                border: {
+                    top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                    bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                    left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                    right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+                }
+            };
+            
+            // Применяем стили к заголовкам
+            worksheet.getRow(1).eachCell((cell) => {
+                cell.style = headerStyle;
+            });
+            
+            // Применяем цветовое кодирование к данным
+            exportData.rows.forEach((row, rowIndex) => {
+                const excelRowIndex = rowIndex + 2; // +2 потому что 1 строка заголовки
+                
+                row.forEach((cell, colIndex) => {
+                    const excelCell = worksheet.getCell(excelRowIndex, colIndex + 1);
+                    
+                    let fillColor = null;
+                    
+                    // Применяем цвета к ячейкам статусов
+                    if (cell.fillColor) {
+                        fillColor = cell.fillColor.replace('#', 'FF');
+                    }
+                    
+                    // Базовый стиль для всех ячеек данных
+                    const cellStyle = {
+                        alignment: { 
+                            horizontal: colIndex === 0 ? 'center' : 'center',
+                            vertical: 'middle' 
+                        },
+                        border: {
+                            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                            right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+                        }
+                    };
+                    
+                    // Добавляем заливку если есть цвет
+                    if (fillColor) {
+                        cellStyle.fill = { 
+                            type: 'pattern', 
+                            pattern: 'solid', 
+                            fgColor: { argb: fillColor } 
+                        };
+                        cellStyle.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                    } else {
+                        cellStyle.font = { color: { argb: 'FF000000' } };
+                    }
+                    
+                    excelCell.style = cellStyle;
+                });
+            });
+            
+            // Сохраняем файл
+            const fileName = 'Посещаемость_{{ participant.full_name|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+            
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error('Ошибка экспорта Excel:', error);
+            alert('Ошибка при экспорте в Excel: ' + error.message);
+        }
+    }
+
+    function exportToPDF() {
+        try {
+            const exportData = prepareExportData();
+            
+            const pdfTableBody = [];
+            
+            // Добавляем заголовки
+            const headerRow = exportData.headers.map(header => ({
+                text: header,
+                fillColor: '#f8f9fa',
+                bold: true,
+                alignment: 'center',
+                fontSize: 8
+            }));
+            pdfTableBody.push(headerRow);
+            
+            // Добавляем строки данных
+            exportData.rows.forEach(row => {
+                const dataRow = row.map((cell, index) => ({
+                    text: cell.text || cell,
+                    fillColor: cell.fillColor || null,
+                    color: cell.color || '#000000',
+                    fontSize: 7,
+                    alignment: 'center'
+                }));
+                pdfTableBody.push(dataRow);
+            });
+            
+            // Вычисляем ширины колонок
+            const columnWidths = Array(exportData.headers.length).fill('*');
+            columnWidths[0] = 60; // Дата чуть шире
+            
+            const docDefinition = {
+                pageOrientation: 'landscape',
+                pageSize: 'A4',
+                pageMargins: [20, 40, 20, 30],
+                content: [
+                    {
+                        text: 'Посещаемость участника: {{ participant.full_name|escapejs }}',
+                        style: 'header',
+                        alignment: 'center',
+                        margin: [0, 0, 0, 10]
+                    },
+                    {
+                        table: {
+                            headerRows: 1,
+                            widths: columnWidths,
+                            body: pdfTableBody
+                        },
+                        layout: {
+                            hLineWidth: function (i, node) {
+                                return i === 1 ? 1 : 0.3;
+                            },
+                            vLineWidth: function (i, node) {
+                                return 0.3;
+                            },
+                            hLineColor: function (i, node) {
+                                return i === 1 ? '#666666' : '#cccccc';
+                            },
+                            vLineColor: function (i, node) {
+                                return '#cccccc';
+                            }
+                        }
+                    }
+                ],
+                styles: {
+                    header: {
+                        fontSize: 12,
+                        bold: true
+                    }
+                },
+                defaultStyle: {
+                    fontSize: 7
+                }
+            };
+
+            pdfMake.createPdf(docDefinition).download('Посещаемость_{{ participant.full_name|escapejs }}_' + new Date().toISOString().slice(0, 10) + '.pdf');
+            
+        } catch (error) {
+            console.error('Ошибка экспорта PDF:', error);
+            alert('Ошибка при экспорте в PDF: ' + error.message);
+        }
+    }
+
+    function prepareExportData() {
+        const headers = ['Дата', 'Вход', 'Статус входа'];
+        
+        if (trackExit) {
+            headers.push('Выход', 'Статус выхода');
+        }
+        
+        headers.push('Доверие', 'Отметка вход');
+        
+        if (trackExit) {
+            headers.push('Отметка выход');
+        }
+        
+        headers.push('Действия');
+        
+        const rows = [];
+        
+        // Собираем данные из таблицы
+        const table = document.getElementById('participant-table');
+        const tbody = table.querySelector('tbody');
+        const tableRows = tbody.querySelectorAll('tr');
+        
+        tableRows.forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            const row = [];
+            
+            cells.forEach((cell, index) => {
+                let cellData = { text: cell.textContent.trim() };
+                
+                // Определяем цвет ячейки на основе содержимого
+                const badges = cell.querySelectorAll('.badge');
+                if (badges.length > 0) {
+                    const badge = badges[0];
+                    if (badge.classList.contains('bg-soft-success')) {
+                        cellData.fillColor = '#4CAF50';
+                        cellData.color = '#FFFFFF';
+                    } else if (badge.classList.contains('bg-soft-warning')) {
+                        cellData.fillColor = '#FF9800';
+                        cellData.color = '#FFFFFF';
+                    } else if (badge.classList.contains('bg-soft-info')) {
+                        cellData.fillColor = '#2196F3';
+                        cellData.color = '#FFFFFF';
+                    } else if (badge.classList.contains('bg-soft-danger')) {
+                        cellData.fillColor = '#F44336';
+                        cellData.color = '#FFFFFF';
+                    }
+                }
+                
+                row.push(cellData);
+            });
+            
+            rows.push(row);
+        });
+        
+        return { headers, rows };
     }
     </script>
 {% endblock %}

@@ -26,7 +26,7 @@ class GroupAdmin(ModelAdmin):
             "fields": ("start_date", "end_date")
         }),
         ("Настройки отметок", {
-            "fields": ("use_time_limits",),
+            "fields": ("use_time_limits", "track_exit"),
             "description": "Настройки ограничений по времени отметок участников",
         }),
         ("Связи", {

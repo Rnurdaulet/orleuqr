@@ -391,6 +391,7 @@
     // Глобальные переменные для доступа из функций
     let sessions = [];
     let participants = [];
+    const trackExit = {{ group.track_exit|yesno:"true,false" }};
     
     // Функция для инициализации tooltips
     function initializeTooltips() {
@@ -454,10 +455,11 @@
             if (todaySession) {
                 const a = p.attendance[todaySession[0]];
                 if (a) {
-                    todayCell = '<td class="text-start">' +
-                        '<div><strong></strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
-                        '<div><strong></strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
-                        '</td>';
+                    let cellContent = '<div><strong></strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>';
+                    if (trackExit) {
+                        cellContent += '<div><strong></strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>';
+                    }
+                    todayCell = '<td class="text-start">' + cellContent + '</td>';
                 }
             }
 
@@ -482,10 +484,11 @@
                 if (!a) {
                     innerHTML += '<td>-</td>';
                 } else {
-                    innerHTML += '<td class="text-start">' +
-                        '<div><strong></strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>' +
-                        '<div><strong></strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>' +
-                        '</td>';
+                    let cellContent = '<div><strong></strong> ' + getStatusBadge(a.arrived_status, a.marked_entry) + ' ' + (a.arrived_at || '') + '</div>';
+                    if (trackExit) {
+                        cellContent += '<div><strong></strong> ' + getStatusBadge(a.left_status, a.marked_exit) + ' ' + (a.left_at || '') + '</div>';
+                    }
+                    innerHTML += '<td class="text-start">' + cellContent + '</td>';
                 }
             });
 
@@ -722,25 +725,43 @@
             worksheet.addRow(rowData);
         });
         
-        // Настраиваем объединение ячеек
-        // Объединяем ячейку "Участник" (A1:A2)
-        worksheet.mergeCells('A1:A2');
-        
-        // Объединяем даты (каждая дата занимает 2 колонки)
-        let colIndex = 2; // Начинаем с колонки B (2)
-        exportData.topHeaders.forEach((header, index) => {
-            if (index > 0 && header !== '') {
-                const startCol = String.fromCharCode(64 + colIndex);
-                const endCol = String.fromCharCode(64 + colIndex + 1);
-                worksheet.mergeCells(`${startCol}1:${endCol}1`);
-                colIndex += 2;
+        // Настраиваем объединение ячеек безопасно
+        try {
+            // Объединяем ячейку "Участник" (A1:A2)
+            worksheet.mergeCells('A1:A2');
+            
+            // Объединяем даты только если отслеживается выход
+            if (trackExit) {
+                let colIndex = 2; // Начинаем с колонки B (2)
+                exportData.topHeaders.forEach((header, index) => {
+                    if (index > 0 && header !== '' && colIndex <= maxColumns) {
+                        const startCol = String.fromCharCode(64 + colIndex);
+                        const endCol = String.fromCharCode(64 + colIndex + 1);
+                        if (colIndex + 1 <= maxColumns) {
+                            worksheet.mergeCells(`${startCol}1:${endCol}1`);
+                        }
+                        colIndex += 2;
+                    }
+                });
             }
-        });
+        } catch (error) {
+            console.warn('Ошибка при объединении ячеек:', error);
+        }
         
-        // Устанавливаем ширину колонок
-        worksheet.getColumn(1).width = 25; // Участник
-        for (let i = 2; i <= exportData.subHeaders.length; i++) {
-            worksheet.getColumn(i).width = 12; // Колонки времени
+        // Устанавливаем ширину колонок безопасно
+        const maxColumns = Math.max(exportData.topHeaders.length, exportData.subHeaders.length);
+        
+        // Устанавливаем ширину для участника
+        if (worksheet.getColumn(1)) {
+            worksheet.getColumn(1).width = 25;
+        }
+        
+        // Устанавливаем ширину для остальных колонок
+        for (let i = 2; i <= maxColumns; i++) {
+            const column = worksheet.getColumn(i);
+            if (column) {
+                column.width = 12;
+            }
         }
         
         // Стили для заголовков
@@ -1059,16 +1080,26 @@
         // Добавляем "Сегодня" (если есть)
         const todaySession = sessions.find(([_, date]) => date === todayISO);
         if (todaySession) {
-            topHeaders.push('Сегодня', '');
-            subHeaders.push('вход', 'выход');
+            if (trackExit) {
+                topHeaders.push('Сегодня', '');
+                subHeaders.push('вход', 'выход');
+            } else {
+                topHeaders.push('Сегодня');
+                subHeaders.push('вход');
+            }
         }
         
         // Добавляем остальные сессии
         sessions.forEach(([sessionId, sessionDate]) => {
             if (sessionDate !== todayISO) {
                 const formattedDate = formatDate(sessionDate);
-                topHeaders.push(formattedDate, '');
-                subHeaders.push('вход', 'выход');
+                if (trackExit) {
+                    topHeaders.push(formattedDate, '');
+                    subHeaders.push('вход', 'выход');
+                } else {
+                    topHeaders.push(formattedDate);
+                    subHeaders.push('вход');
+                }
             }
         });
 
@@ -1087,14 +1118,20 @@
                         todayAttendance.arrived_status,
                         todayAttendance.marked_entry
                     ));
-                    // Выход
-                    row.push(formatExportCell(
-                        todayAttendance.left_at,
-                        todayAttendance.left_status,
-                        todayAttendance.marked_exit
-                    ));
+                    // Выход (только если отслеживается)
+                    if (trackExit) {
+                        row.push(formatExportCell(
+                            todayAttendance.left_at,
+                            todayAttendance.left_status,
+                            todayAttendance.marked_exit
+                        ));
+                    }
                 } else {
-                    row.push({ text: '--' }, { text: '--' });
+                    if (trackExit) {
+                        row.push({ text: '--' }, { text: '--' });
+                    } else {
+                        row.push({ text: '--' });
+                    }
                 }
             }
             
@@ -1109,14 +1146,20 @@
                             attendance.arrived_status,
                             attendance.marked_entry
                         ));
-                        // Выход
-                        row.push(formatExportCell(
-                            attendance.left_at,
-                            attendance.left_status,
-                            attendance.marked_exit
-                        ));
+                        // Выход (только если отслеживается)
+                        if (trackExit) {
+                            row.push(formatExportCell(
+                                attendance.left_at,
+                                attendance.left_status,
+                                attendance.marked_exit
+                            ));
+                        }
                     } else {
-                        row.push({ text: '--' }, { text: '--' });
+                        if (trackExit) {
+                            row.push({ text: '--' }, { text: '--' });
+                        } else {
+                            row.push({ text: '--' });
+                        }
                     }
                 }
             });

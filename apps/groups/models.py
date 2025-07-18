@@ -28,6 +28,11 @@ class Group(models.Model):
         default=False,
         help_text=_("Если включено, то отметка доступна только в пределах временных окон сессии"),
     )
+    track_exit = models.BooleanField(
+        _("Отслеживать выход"),
+        default=True,
+        help_text=_("Если включено, участники должны отмечаться как на входе, так и на выходе. Если выключено - только вход"),
+    )
 
     def __str__(self):
         return f"{self.code} — {self.course_name}"

@@ -14,6 +14,11 @@ def _get_session_by_token(token: str, mode: str):
             session = Session.objects.get(qr_token_entry=token)
         else:
             session = Session.objects.get(qr_token_exit=token)
+            
+        # Проверяем, разрешен ли выход для этой группы
+        if mode == 'exit' and not session.group.track_exit:
+            return None, _("Отметка выхода отключена для данной группы. Обратитесь к администратору.")
+            
         return session, None
     except Session.DoesNotExist:
         return None, _("QR-код недействителен или сессия не найдена. Возможно, код устарел или был удален.")
