@@ -1143,29 +1143,18 @@
             const topHeaders = ['Участник'];
             const subHeaders = [''];
             
-            // Добавляем "Сегодня" (если есть)
-            const todaySession = sessions.find(([_, date]) => date === todayISO);
-            if (todaySession) {
+            // Добавляем ВСЕ сессии в хронологическом порядке
+            sessions.forEach(([sessionId, sessionDate]) => {
+                const formattedDate = formatDate(sessionDate);
+                // Если это сегодняшний день, добавляем отметку "Сегодня"
+                const dateLabel = sessionDate === todayISO ? `${formattedDate} (Сегодня)` : formattedDate;
+                
                 if (trackExit) {
-                    topHeaders.push('Сегодня', '');
+                    topHeaders.push(dateLabel, '');
                     subHeaders.push('вход', 'выход');
                 } else {
-                    topHeaders.push('Сегодня');
+                    topHeaders.push(dateLabel);
                     subHeaders.push('вход');
-                }
-            }
-            
-            // Добавляем остальные сессии
-            sessions.forEach(([sessionId, sessionDate]) => {
-                if (sessionDate !== todayISO) {
-                    const formattedDate = formatDate(sessionDate);
-                    if (trackExit) {
-                        topHeaders.push(formattedDate, '');
-                        subHeaders.push('вход', 'выход');
-                    } else {
-                        topHeaders.push(formattedDate);
-                        subHeaders.push('вход');
-                    }
                 }
             });
 
@@ -1174,22 +1163,22 @@
             participants.forEach(participant => {
                 const row = [{ text: participant.name || 'Неизвестно' }];
                 
-                // Добавляем данные "Сегодня"
-                if (todaySession) {
-                    const todayAttendance = participant.attendance[todaySession[0]];
-                    if (todayAttendance) {
+                // Добавляем данные для ВСЕХ сессий в том же порядке
+                sessions.forEach(([sessionId, sessionDate]) => {
+                    const attendance = participant.attendance[sessionId];
+                    if (attendance) {
                         // Вход
                         row.push(formatExportCell(
-                            todayAttendance.arrived_at,
-                            todayAttendance.arrived_status,
-                            todayAttendance.marked_entry
+                            attendance.arrived_at,
+                            attendance.arrived_status,
+                            attendance.marked_entry
                         ));
                         // Выход (только если отслеживается)
                         if (trackExit) {
                             row.push(formatExportCell(
-                                todayAttendance.left_at,
-                                todayAttendance.left_status,
-                                todayAttendance.marked_exit
+                                attendance.left_at,
+                                attendance.left_status,
+                                attendance.marked_exit
                             ));
                         }
                     } else {
@@ -1197,35 +1186,6 @@
                             row.push({ text: '--' }, { text: '--' });
                         } else {
                             row.push({ text: '--' });
-                        }
-                    }
-                }
-                
-                // Добавляем данные остальных сессий
-                sessions.forEach(([sessionId, sessionDate]) => {
-                    if (sessionDate !== todayISO) {
-                        const attendance = participant.attendance[sessionId];
-                        if (attendance) {
-                            // Вход
-                            row.push(formatExportCell(
-                                attendance.arrived_at,
-                                attendance.arrived_status,
-                                attendance.marked_entry
-                            ));
-                            // Выход (только если отслеживается)
-                            if (trackExit) {
-                                row.push(formatExportCell(
-                                    attendance.left_at,
-                                    attendance.left_status,
-                                    attendance.marked_exit
-                                ));
-                            }
-                        } else {
-                            if (trackExit) {
-                                row.push({ text: '--' }, { text: '--' });
-                            } else {
-                                row.push({ text: '--' });
-                            }
                         }
                     }
                 });

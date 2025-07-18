@@ -88,16 +88,7 @@
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <span class="d-block h6 text-cap">Опозданий</span>
-                                <span class="d-block h2 mb-0">
-                                    {% with late_count=0 %}
-                                        {% for att in attendance_by_session.values %}
-                                            {% if att.arrived_status == 'too_late' %}
-                                                {% with late_count=late_count|add:1 %}{% endwith %}
-                                            {% endif %}
-                                        {% endfor %}
-                                        {{ late_count }}
-                                    {% endwith %}
-                                </span>
+                                <span class="d-block h2 mb-0" id="late-count">0</span>
                             </div>
                         </div>
                     </div>
@@ -386,7 +377,7 @@
                                     </td>
                                     {% endif %}
                                     <td>
-                                        {% if session.date == today %}
+                                        {% if session.date|stringformat:'Y-m-d' == today_str %}
                                             <div class="btn-group" role="group">
                                                 <button
                                                     class="btn btn-white btn-sm"
@@ -741,6 +732,7 @@
 
         $('#toggleColumn_marks').change(function (e) {
             datatable.columns(4).visible(e.target.checked)
+            // Только колонка "Отметка вход" когда track_exit = false
         });
         {% endif %}
 
@@ -751,17 +743,7 @@
         const entryBtn = document.getElementById("mark-entry-btn");
         const exitBtn = document.getElementById("mark-exit-btn");
 
-        document.getElementById("markModal").addEventListener("show.bs.modal", function (event) {
-            const btn = event.relatedTarget;
-            sessionId = btn.getAttribute("data-session-id");
-            attendanceId = btn.getAttribute("data-attendance-id");
-
-            entryBtn.disabled = btn.getAttribute("data-disable-entry") === "1";
-            if (exitBtn) {
-                exitBtn.disabled = btn.getAttribute("data-disable-exit") === "1";
-            }
-        });
-
+        // Вынесем функцию в глобальную область видимости
         function sendMark(type) {
             fetch("{% url 'attendance:manual_mark' %}", {
                 method: "POST",
@@ -790,6 +772,17 @@
             });
         }
 
+        document.getElementById("markModal").addEventListener("show.bs.modal", function (event) {
+            const btn = event.relatedTarget;
+            sessionId = btn.getAttribute("data-session-id");
+            attendanceId = btn.getAttribute("data-attendance-id");
+
+            entryBtn.disabled = btn.getAttribute("data-disable-entry") === "1";
+            if (exitBtn) {
+                exitBtn.disabled = btn.getAttribute("data-disable-exit") === "1";
+            }
+        });
+
         entryBtn.addEventListener("click", () => sendMark("entry"));
         if (exitBtn) {
             exitBtn.addEventListener("click", () => sendMark("exit"));
@@ -797,6 +790,16 @@
 
         // Initialize TomSelect
         HSCore.components.HSTomSelect.init('.js-select');
+
+        // Fix late count calculation
+        let lateCount = 0;
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const statusCell = row.cells[2]; // Status column
+            if (statusCell && statusCell.textContent.includes('Опоздал')) {
+                lateCount++;
+            }
+        });
+        document.getElementById('late-count').textContent = lateCount;
     });
 
     function clearFilters() {

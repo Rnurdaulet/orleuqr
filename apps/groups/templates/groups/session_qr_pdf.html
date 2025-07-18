@@ -18,8 +18,6 @@
                         </ol>
                     </nav>
                     <h1 class="page-header-title">QR-коды для сессии <span class="badge bg-soft-dark text-dark ms-2">{{ session.date|date:"d.m.Y" }}</span></h1>
-                    
-
                 </div>
                 <!-- End Col -->
 
@@ -28,7 +26,6 @@
                         <a class="btn btn-outline-primary" href="{% url 'groups:group_detail' session.group.id %}">
                             <i class="bi-arrow-left me-1"></i> Назад к группе
                         </a>
-
                     </div>
                 </div>
                 <!-- End Col -->
@@ -323,82 +320,35 @@
         // Initialize nav scroller
         new HSNavScroller('.js-nav-scroller');
 
-        // Utility functions
-        window.printQRCodes = function() {
-            const printContent = document.getElementById('qrTabContent');
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>QR-коды - {{ session.group.code }} - {{ session.date }}</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 20px; }
-                            .qr-section { page-break-after: always; text-align: center; }
-                            .qr-section:last-child { page-break-after: avoid; }
-                            img { max-width: 100%; height: auto; }
-                            h2 { margin-bottom: 10px; }
-                            .details { margin-bottom: 30px; color: #666; }
-                        </style>
-                    </head>
-                    <body>
-                        {% if session.qr_file_entry %}
-                        <div class="qr-section">
-                            <h2>QR-код для входа</h2>
-                            <div class="details">{{ session.group.code }} — {{ session.date|date:"d.m.Y" }}</div>
-                            <img src="{{ session.qr_file_entry.url }}" alt="QR-код для входа">
-                        </div>
-                        {% endif %}
-                        {% if session.qr_file_exit %}
-                        <div class="qr-section">
-                            <h2>QR-код для выхода</h2>
-                            <div class="details">{{ session.group.code }} — {{ session.date|date:"d.m.Y" }}</div>
-                            <img src="{{ session.qr_file_exit.url }}" alt="QR-код для выхода">
-                        </div>
-                        {% endif %}
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.print();
-        };
+        // Данные для проверки статуса QR-кодов
+        const hasEntryQr = {% if session.qr_file_entry %}true{% else %}false{% endif %};
+        const hasExitQr = {% if session.qr_file_exit %}true{% else %}false{% endif %};
+        const trackExit = {{ session.group.track_exit|yesno:"true,false" }};
 
-        window.downloadAllQR = function() {
-            {% if session.qr_file_entry %}
-                downloadFile('{{ session.qr_file_entry.url }}', 'qr-entry-{{ session.date|date:"Y-m-d" }}.svg');
-            {% endif %}
-            {% if session.qr_file_exit %}
-                setTimeout(() => {
-                    downloadFile('{{ session.qr_file_exit.url }}', 'qr-exit-{{ session.date|date:"Y-m-d" }}.svg');
-                }, 1000);
-            {% endif %}
-        };
-
-        window.regenerateAllQR = function() {
-            if (confirm('Вы уверены, что хотите перегенерировать все QR-коды? Старые коды станут недействительными.')) {
-                // Submit both forms
-                const forms = document.querySelectorAll('form[method="post"]');
-                if (forms.length > 0) {
-                    forms[0].submit();
-                }
+        // Умный auto-refresh только если QR коды еще не созданы
+        function checkQRStatus() {
+            // Обновляем только если есть несозданные QR коды и страница активна
+            if (!document.hidden && (!hasEntryQr || (trackExit && !hasExitQr))) {
+                // Используем AJAX вместо полной перезагрузки
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        // Проверяем, появились ли новые QR коды
+                        if (html.includes('qr_file_entry') || html.includes('qr_file_exit')) {
+                            location.reload(); // Перезагружаем только если появились новые QR
+                        }
+                    })
+                    .catch(err => console.log('Ошибка проверки статуса QR:', err));
             }
-        };
-
-        function downloadFile(url, filename) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
-
-        // Auto-refresh QR status every 30 seconds
-        setInterval(() => {
-            // Check if page is still active
-            if (!document.hidden) {
-                location.reload();
-            }
-        }, 30000);
+        
+        // Проверяем статус каждые 10 секунд и только при необходимости
+        const refreshInterval = setInterval(checkQRStatus, 10000);
+        
+        // Останавливаем проверки если все QR коды созданы
+        if (hasEntryQr && (!trackExit || hasExitQr)) {
+            clearInterval(refreshInterval);
+        }
     });
     </script>
 {% endblock %}

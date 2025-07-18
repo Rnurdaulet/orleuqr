@@ -14,10 +14,6 @@
                     
 
                 </div>
-                <!-- End Col -->
-
-
-                <!-- End Col -->
             </div>
             <!-- End Row -->
         </div>
@@ -440,17 +436,6 @@
                 dt.column(columnIndex).search(elVal).draw();
             });
         });
-
-        // Глобальные функции для экспорта всех таблиц
-        window.exportAllTables = function() {
-            dataTables.forEach(dt => {
-                dt.button(0).trigger(); // Excel export
-            });
-        };
-
-        window.printAllTables = function() {
-            window.print();
-        };
 
         window.clearGroupFilters = function(groupIndex) {
             document.querySelectorAll('[name="statusFilter' + groupIndex + '"], [name="trustFilter' + groupIndex + '"]').forEach(el => el.checked = false);
